@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>New Tab</title>
+  <link rel="stylesheet" href="pane.css">
+  <link rel="stylesheet" href="newtab.css">
+  <script src="newtab.js" defer></script>
+</head>
+<body>
+  <header>
+    <strong>Pane</strong>
+    <button id="settings" aria-label="Open Pane settings" title="Settings">&#9881;</button>
+  </header>
+  <main>
+    <form id="search-form" role="search">
+      <input id="search" type="search" autocomplete="off" autofocus placeholder="Search or enter address" aria-label="Search or enter address">
+    </form>
+
+    <section id="dashboard" class="mode hidden">
+      <div class="hero">
+        <time id="clock"></time>
+        <span id="date"></span>
+      </div>
+      <div class="widgets">
+        <article class="panel weather">
+          <span class="label">Weather</span>
+          <strong id="weather">Choose a location in settings</strong>
+        </article>
+        <article class="panel">
+          <span class="label">Bookmarks</span>
+          <div id="bookmarks" class="links"></div>
+        </article>
+      </div>
+      <div id="quick-launch" class="sites"></div>
+    </section>
+
+    <section id="speed-dial" class="mode hidden">
+      <div id="top-sites" class="sites"></div>
+    </section>
+  </main>
+</body>
+</html>

@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="pane.css">
+  <style>
+    body { padding: 18px; }
+    h1 { margin: 0 0 16px; font-size: 18px; }
+    .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
+    .panel { padding: 14px; }
+    .panel strong { display: block; margin-top: 5px; font-size: 20px; }
+    .actions { margin-top: 14px; display: flex; gap: 8px; }
+  </style>
+  <script src="panel.js" defer></script>
+</head>
+<body>
+  <h1>Pane performance</h1>
+  <div class="metrics">
+    <div class="panel">DOM nodes<strong id="nodes">-</strong></div>
+    <div class="panel">Page load<strong id="load">-</strong></div>
+    <div class="panel">Transferred<strong id="transfer">-</strong></div>
+    <div class="panel">Resources<strong id="resources">-</strong></div>
+  </div>
+  <div class="actions"><button id="refresh">Refresh</button><button id="settings">Pane settings</button><button id="blocker">uBlock dashboard</button></div>
+</body>
+</html>

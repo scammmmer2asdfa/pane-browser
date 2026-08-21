@@ -1,0 +1,35 @@
+name: Build macOS
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+env:
+  GECKO_DIR: ${{ runner.temp }}/pane-gecko
+  CONFIG: release
+
+jobs:
+  build:
+    runs-on: [self-hosted, macOS, pane-builder]
+    timeout-minutes: 720
+    steps:
+      - uses: actions/checkout@v4
+      - name: Bootstrap Gecko toolchain
+        run: ./scripts/bootstrap-macos.sh
+      - name: Build Pane Browser
+        run: ./scripts/build-macos.sh
+      - name: Package DMG
+        run: ./scripts/package-macos.sh
+      - name: Upload macOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pane-browser-macos-${{ runner.arch }}
+          path: |
+            artifacts/*.dmg
+            artifacts/*.sha256
+          if-no-files-found: error
+          retention-days: 14

@@ -1,0 +1,44 @@
+# macOS release build of Pane Browser (Gecko / Firefox fork).
+# Usage: MOZCONFIG=$PWD/mozconfig/macos-release.mozconfig ./mach build
+
+ac_add_options --enable-application=browser
+ac_add_options --with-branding=browser/branding/pane
+
+# Toolchain / bootstrap
+ac_add_options --enable-bootstrap
+mk_add_options MOZ_OBJDIR=@TOPSRCDIR@/../obj-pane-release
+
+# Optimisation
+ac_add_options --enable-optimize
+ac_add_options --disable-debug
+ac_add_options --enable-lto=cross
+
+# Keep the whole web platform. WASM, JIT, WebGL, WebRTC all stay on.
+ac_add_options --enable-webrtc
+ac_add_options --enable-av1
+
+# Strip Mozilla data collection out of the binary entirely.
+ac_add_options --disable-crashreporter
+ac_add_options --disable-updater
+ac_add_options --disable-default-browser-agent
+export MOZ_TELEMETRY_REPORTING=
+export MOZ_DATA_REPORTING=
+export MOZ_SERVICES_HEALTHREPORT=
+export MOZ_NORMANDY=
+export MOZ_CRASHREPORTER=
+
+# Allow unsigned/self-hosted extensions so sideloading works for developers.
+export MOZ_REQUIRE_SIGNING=
+
+# Unbranded-style app name so we do not ship Mozilla trademarks.
+export MOZ_APP_NAME=pane
+export MOZ_APP_DISPLAYNAME="Pane Browser"
+export MOZ_APP_REMOTINGNAME=pane
+export MOZ_MACBUNDLE_ID=com.pane.browser
+
+# Universal binary: build once per arch then `./mach macos-unified-build`,
+# or set a single target here.
+# ac_add_options --target=aarch64-apple-darwin
+# ac_add_options --target=x86_64-apple-darwin
+
+mk_add_options MOZ_MAKE_FLAGS="-j$(sysctl -n hw.ncpu)"

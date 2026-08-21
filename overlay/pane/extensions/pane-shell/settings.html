@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pane Settings</title>
+  <link rel="stylesheet" href="pane.css">
+  <link rel="stylesheet" href="settings.css">
+  <script src="settings.js" defer></script>
+</head>
+<body>
+  <nav><strong>Pane</strong><span>Settings</span></nav>
+  <main>
+    <section>
+      <h1>Appearance</h1>
+      <div class="rows">
+        <label>Mode<select id="appearance"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select></label>
+        <label>Accent<input id="accent" type="color"></label>
+        <label>UI font<input id="font" type="text"></label>
+        <label>Roundness <output id="radius-value"></output><input id="radius" type="range" min="0" max="16" step="1"></label>
+        <label>Glass blur <output id="blur-value"></output><input id="blur" type="range" min="0" max="40" step="1"></label>
+        <label>Animation<select id="animation"><option value="off">Off</option><option value="minimal">Minimal</option><option value="full">Full</option></select></label>
+      </div>
+    </section>
+    <section>
+      <h1>Tabs and new page</h1>
+      <div class="rows">
+        <label>Tab bar<select id="tab-position"><option value="top">Top</option><option value="left">Left sidebar</option><option value="right">Right sidebar</option><option value="floating">Floating</option></select></label>
+        <label>New tab<select id="new-tab-mode"><option value="dashboard">Widget dashboard</option><option value="minimal">Minimal</option><option value="speedDial">Speed dial</option></select></label>
+        <label>Weather location<input id="weather-location" type="text" placeholder="City or postcode"></label>
+      </div>
+    </section>
+    <section>
+      <h1>Theme files</h1>
+      <div class="actions">
+        <button id="export-theme">Export .panetheme</button>
+        <button id="import-theme">Import .panetheme</button>
+        <input id="theme-file" class="hidden" type="file" accept=".panetheme,application/json">
+      </div>
+    </section>
+    <section>
+      <h1>Browser data</h1>
+      <div class="actions">
+        <button id="import-data">Import from another browser</button>
+        <button id="profiles">Manage profiles</button>
+        <button id="extensions">Manage extensions</button>
+      </div>
+    </section>
+    <p id="status" role="status"></p>
+  </main>
+</body>
+</html>

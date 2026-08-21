@@ -1,0 +1,47 @@
+{
+  "manifest_version": 3,
+  "name": "Pane Shell",
+  "version": "0.1.0",
+  "description": "Pane Browser's new tab, theme engine, and browser controls.",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "pane-shell@pane.browser",
+      "strict_min_version": "140.0"
+    }
+  },
+  "permissions": [
+    "bookmarks",
+    "search",
+    "storage",
+    "tabs",
+    "theme",
+    "topSites"
+  ],
+  "host_permissions": [
+    "https://api.open-meteo.com/*",
+    "https://geocoding-api.open-meteo.com/*"
+  ],
+  "background": {
+    "scripts": ["background.js"]
+  },
+  "devtools_page": "devtools.html",
+  "action": {
+    "default_title": "Toggle Pane appearance"
+  },
+  "chrome_url_overrides": {
+    "newtab": "newtab.html"
+  },
+  "options_ui": {
+    "page": "settings.html",
+    "open_in_tab": true
+  },
+  "commands": {
+    "toggle-appearance": {
+      "suggested_key": {
+        "default": "Alt+Shift+L",
+        "mac": "MacCtrl+Shift+L"
+      },
+      "description": "Toggle light and dark appearance"
+    }
+  }
+}

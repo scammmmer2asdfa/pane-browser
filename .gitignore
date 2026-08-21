@@ -1,0 +1,6 @@
+gecko/
+obj-pane-*/
+artifacts/
+.DS_Store
+*.dmg
+*.xpi

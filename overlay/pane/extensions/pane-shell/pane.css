@@ -1,0 +1,44 @@
+:root {
+  --pane-accent: #3b6ff5;
+  --pane-bg: #f6f7f9;
+  --pane-surface: #ffffff;
+  --pane-text: #111318;
+  --pane-muted: #6b7280;
+  --pane-radius: 10px;
+  --pane-blur: 18px;
+  --pane-font: "SF Pro Text", "Helvetica Neue", sans-serif;
+  --pane-duration: 120ms;
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+html, body { min-height: 100%; margin: 0; }
+body {
+  background:
+    radial-gradient(circle at 18% 0%, color-mix(in srgb, var(--pane-accent) 12%, transparent), transparent 34rem),
+    var(--pane-bg);
+  color: var(--pane-text);
+  font: 15px/1.45 var(--pane-font);
+}
+button, input, select { font: inherit; }
+button, .site, .panel {
+  border: 1px solid color-mix(in srgb, var(--pane-muted) 24%, transparent);
+  border-radius: var(--pane-radius);
+  background: color-mix(in srgb, var(--pane-surface) 88%, transparent);
+  color: var(--pane-text);
+  backdrop-filter: blur(var(--pane-blur));
+}
+button, .site { transition: border-color var(--pane-duration), transform var(--pane-duration); }
+button:hover, .site:hover { border-color: var(--pane-accent); }
+button:active, .site:active { transform: scale(.98); }
+button { padding: 9px 13px; cursor: pointer; }
+input, select {
+  min-height: 42px;
+  border: 1px solid color-mix(in srgb, var(--pane-muted) 35%, transparent);
+  border-radius: var(--pane-radius);
+  background: var(--pane-surface);
+  color: var(--pane-text);
+  padding: 8px 12px;
+}
+input:focus, select:focus { outline: 2px solid var(--pane-accent); outline-offset: 1px; }
+.hidden { display: none !important; }

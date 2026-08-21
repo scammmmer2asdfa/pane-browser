@@ -1,0 +1,22 @@
+# macOS debug/dev build of Pane Browser. Faster to rebuild, slower to run.
+ac_add_options --enable-application=browser
+ac_add_options --with-branding=browser/branding/pane
+
+ac_add_options --enable-bootstrap
+mk_add_options MOZ_OBJDIR=@TOPSRCDIR@/../obj-pane-debug
+
+ac_add_options --enable-debug
+ac_add_options --disable-optimize
+
+ac_add_options --disable-crashreporter
+ac_add_options --disable-updater
+export MOZ_TELEMETRY_REPORTING=
+export MOZ_DATA_REPORTING=
+export MOZ_REQUIRE_SIGNING=
+
+export MOZ_APP_NAME=pane
+export MOZ_APP_DISPLAYNAME="Pane Browser"
+export MOZ_APP_REMOTINGNAME=pane
+export MOZ_MACBUNDLE_ID=com.pane.browser
+
+mk_add_options MOZ_MAKE_FLAGS="-j$(sysctl -n hw.ncpu)"

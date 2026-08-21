@@ -1,0 +1,43 @@
+name: Validate overlay
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate shell files
+        run: |
+          for file in scripts/*.sh mozconfig/*.mozconfig overlay/browser/branding/pane/configure.sh; do
+            bash -n "$file"
+          done
+      - name: Validate JSON
+        run: |
+          python3 -m json.tool overlay/pane/distribution/policies.json >/dev/null
+          python3 -m json.tool overlay/pane/extensions/pane-shell/manifest.json >/dev/null
+      - name: Validate extension JavaScript
+        run: |
+          for file in overlay/pane/extensions/pane-shell/*.js; do
+            node --check "$file"
+          done
+      - name: Confirm Gecko integration points
+        run: |
+          grep -q 'browser.profiles.enabled' overlay/pane/prefs/pane.js
+          grep -q 'browser.migrate.chrome' overlay/pane/prefs/pane.js
+          grep -q 'about:preferences#general-migrate' overlay/pane/extensions/pane-shell/settings.js
+          grep -q 'uBlock0@raymondhill.net' scripts/install-extensions.sh
+      - name: Test overlay application
+        run: |
+          mkdir -p "$RUNNER_TEMP/gecko/browser/branding/unofficial" "$RUNNER_TEMP/gecko/browser/app/profile"
+          touch "$RUNNER_TEMP/gecko/mach"
+          printf 'JS_PREFERENCE_PP_FILES += [\n    "app/profile/firefox.js",\n]\n' > "$RUNNER_TEMP/gecko/browser/moz.build"
+          printf 'MOZ_APP_DISPLAYNAME=Nightly\n' > "$RUNNER_TEMP/gecko/browser/branding/unofficial/configure.sh"
+          GECKO_DIR="$RUNNER_TEMP/gecko" ./scripts/apply-overlay.sh
+          grep -q 'app/profile/pane.js' "$RUNNER_TEMP/gecko/browser/moz.build"
+          test -f "$RUNNER_TEMP/gecko/browser/app/profile/pane.js"
