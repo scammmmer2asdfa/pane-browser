@@ -35,7 +35,7 @@ The result is written to `artifacts/Pane-Browser-macOS-<architecture>.dmg` with 
 - Live native browser-chrome controls for main/background/surface/text colours, corner radius, glass blur, and tab layout
 - Independently adjustable new-tab accent, background, panel, text, font, corner radius, glass blur, animation, and light/dark/system appearance
 - Per-profile settings plus `.panetheme` import and export
-- Per-window named workspace rail with persistent tab sets, contextual-identity isolation, renaming, and two-finger horizontal swipe switching
+- Per-window named spaces with persistent tab sets, renaming, trackpad swipe switching, and no container requirement
 - Renamable browser windows persisted through session restore
 - Native profiles, bookmarks, history, cookies, passwords, password generation, and macOS Keychain support
 - Built-in uBlock Origin distribution package with EasyList, EasyPrivacy, and uBlock filters
@@ -55,7 +55,13 @@ Chrome Web Store packages and Google Sync are Chromium services and cannot run n
 
 Pane keeps tabs and workspaces in one native sidebar. Sidebar tabs shows Gecko's vertical tab strip, Collapsed sidebar uses its expand-on-hover mode, and Top tabs returns to the horizontal tab strip. The sidebar can be placed left or right and resized from Pane's native customizer. Tabs can be detached by dragging them into a new window.
 
-Use the sun button in the workspace strip to customize native browser chrome and choose Top tabs, Sidebar tabs, or Collapsed sidebar. Double-click a workspace to rename it, right-click to delete it, horizontally swipe the strip with two fingers to change workspaces, and use Rename window in the customizer to name that browser window. The gear on the new-tab page opens its separate page appearance controls.
+Use the sun button in the workspace strip to customize native browser chrome and choose Top tabs, Sidebar tabs, or Collapsed sidebar. Double-click a workspace to rename it, right-click to delete it, and use Rename window in the customizer to name that browser window. The gear on the new-tab page opens its separate page appearance controls.
+
+Switch spaces by swiping two fingers horizontally over the sidebar or toolbar, or with Cmd+Alt+Left/Right. Spaces are plain tab sets: they do not create containers, and each space keeps its own tabs across restarts.
+
+## Credits
+
+Pane's workspace swipe handling is adapted from [Zen Browser](https://github.com/zen-browser/desktop)'s `ZenSpacesSwipe`, used under MPL-2.0. Pane is not affiliated with or endorsed by Zen Browser or Mozilla.
 
 Bundled extensions are installed when a profile first starts after installing or upgrading Pane. When testing a rebuilt app against a profile that previously removed a bundled extension, use a fresh profile from `about:profiles` because Gecko preserves explicit uninstall choices.
 

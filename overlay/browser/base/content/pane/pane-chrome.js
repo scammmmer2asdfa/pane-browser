@@ -1,5 +1,9 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. */
+ * License, v. 2.0.
+ *
+ * Workspace swipe handling is adapted from Zen Browser's ZenSpacesSwipe
+ * (MPL-2.0): https://github.com/zen-browser/desktop/blob/dev/src/zen/spaces/ZenSpacesSwipe.mjs
+ */
 
 var PaneChrome = {
   PREF: {
@@ -228,6 +232,7 @@ var PaneChrome = {
     for (const id of ["sidebar-container", "navigator-toolbox", "pane-workspace-rail"]) {
       document.getElementById(id)?.addEventListener("wheel", onWheel, { passive: false });
     }
+    this.bindSwipeGestures();
     window.addEventListener("keydown", event => {
       if (!event.altKey || !(event.metaKey || event.ctrlKey)) return;
       if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
@@ -240,6 +245,45 @@ var PaneChrome = {
     gBrowser.tabContainer.addEventListener("TabClose", () => setTimeout(() => this.ensureVisibleTab()));
     gBrowser.tabContainer.addEventListener("TabSelect", () => setTimeout(() => this.applyWindowName()));
     gBrowser.tabContainer.addEventListener("TabAttrModified", () => setTimeout(() => this.applyWindowName()));
+  },
+
+  // Trackpad swipes over chrome arrive as swipe gestures, never as wheel events.
+  bindSwipeGestures() {
+    let active = false;
+    const mayStart = event => {
+      if (event.direction !== event.DIRECTION_LEFT && event.direction !== event.DIRECTION_RIGHT) return;
+      event.preventDefault();
+      event.stopPropagation();
+      event.allowedDirections |= event.DIRECTION_LEFT | event.DIRECTION_RIGHT;
+    };
+    const start = event => {
+      active = true;
+      event.preventDefault();
+      event.stopPropagation();
+    };
+    const update = event => {
+      if (!active) return;
+      event.preventDefault();
+      event.stopPropagation();
+    };
+    const end = event => {
+      if (!active) return;
+      active = false;
+      event.preventDefault();
+      event.stopPropagation();
+      const rtl = document.documentElement.matches(":-moz-locale-dir(rtl)");
+      const forward = (event.direction === event.DIRECTION_RIGHT) !== rtl;
+      this.cycleWorkspace(forward ? 1 : -1);
+    };
+    for (const id of ["navigator-toolbox", "sidebar-container"]) {
+      const target = document.getElementById(id);
+      if (!target) continue;
+      target.addEventListener("MozSwipeGestureMayStart", mayStart, true);
+      target.addEventListener("MozSwipeGestureStart", start, true);
+      target.addEventListener("MozSwipeGestureUpdate", update, true);
+      target.addEventListener("MozSwipeGesture", end, true);
+      target.addEventListener("MozSwipeGestureEnd", () => { active = false; }, true);
+    }
   },
 
   updateOutputs() {
