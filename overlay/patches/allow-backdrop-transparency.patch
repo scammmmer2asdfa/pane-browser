@@ -1,0 +1,141 @@
+# Allow backdrop-filter to composite correctly over transparent surfaces.
+# Rebased for current mozilla-central from Zen Browser (MPL-2.0):
+# https://github.com/zen-browser/desktop/blob/dev/src/external-patches/firefox/allow_backdrop_to_work_on_transparency.patch
+
+diff --git a/gfx/webrender_bindings/WebRenderAPI.cpp b/gfx/webrender_bindings/WebRenderAPI.cpp
+index 8f7928c42a..9dd7b963f3 100644
+--- a/gfx/webrender_bindings/WebRenderAPI.cpp
++++ b/gfx/webrender_bindings/WebRenderAPI.cpp
+@@ -302,7 +302,9 @@ RefPtr<WebRenderAPI::CreatePromise> WebRenderAPI::Create(
+                 StaticPrefs::gfx_webrender_low_quality_pinch_zoom_AtStartup(),
+                 StaticPrefs::gfx_webrender_max_shared_surface_size_AtStartup(),
+                 StaticPrefs::gfx_webrender_enable_subpixel_aa_AtStartup(),
+-                compositor->ShouldUseLayerCompositor())) {
++                compositor->ShouldUseLayerCompositor(),
++                StaticPrefs::
++                    gfx_webrender_opaque_backdrop_fallback_AtStartup())) {
+           // wr_window_new puts a message into gfxCriticalNote if it returns
+           // false
+           MOZ_ASSERT(errorMessage);
+diff --git a/gfx/webrender_bindings/src/bindings.rs b/gfx/webrender_bindings/src/bindings.rs
+index d7fe39cabc..27e3d0cab8 100644
+--- a/gfx/webrender_bindings/src/bindings.rs
++++ b/gfx/webrender_bindings/src/bindings.rs
+@@ -2141,6 +2141,7 @@ pub extern "C" fn wr_window_new(
+     max_shared_surface_size: i32,
+     enable_subpixel_aa: bool,
+     use_layer_compositor: bool,
++    opaque_backdrop_fallback: bool,
+ ) -> bool {
+     assert!(unsafe { is_in_render_thread() });
+ 
+@@ -2307,6 +2308,7 @@ pub extern "C" fn wr_window_new(
+         // window aren't visible to scene building for another window
+         // (or any window, since the SB has the pool's instance).
+         shared_fonts: render_backend_pool.as_ref().map(|p| p.0.fonts.clone()),
++        opaque_backdrop_fallback,
+         // SWGL doesn't support the GL_ALWAYS depth comparison function used by
+         // `clear_caches_with_quads`, but scissored clears work well.
+         clear_caches_with_quads: !software && !allow_scissored_cache_clears,
+diff --git a/gfx/wr/webrender/src/device/gl.rs b/gfx/wr/webrender/src/device/gl.rs
+index 17d84a4c3c..eb9f35c05d 100644
+--- a/gfx/wr/webrender/src/device/gl.rs
++++ b/gfx/wr/webrender/src/device/gl.rs
+@@ -3893,6 +3893,10 @@ impl Device {
+         self.gl.color_mask(false, false, false, false);
+     }
+ 
++    pub fn set_color_mask(&self, r: bool, g: bool, b: bool, a: bool) {
++        self.gl.color_mask(r, g, b, a);
++    }
++
+     pub fn set_blend(&mut self, enable: bool) {
+         if enable {
+             self.gl.enable(gl::BLEND);
+diff --git a/gfx/wr/webrender/src/renderer/init.rs b/gfx/wr/webrender/src/renderer/init.rs
+index b2cca61531..767edf6f86 100644
+--- a/gfx/wr/webrender/src/renderer/init.rs
++++ b/gfx/wr/webrender/src/renderer/init.rs
+@@ -228,6 +228,8 @@ pub struct WebRenderOptions {
+     /// If true, open a debug socket to listen for remote debugger.
+     /// Relies on `debugger` cargo feature being enabled.
+     pub enable_debugger: bool,
++    /// See explanation of `gfx.webrender.opaque-backdrop-fallback`.
++    pub opaque_backdrop_fallback: bool,
+ }
+ 
+ impl WebRenderOptions {
+@@ -304,6 +306,7 @@ impl Default for WebRenderOptions {
+             low_quality_pinch_zoom: false,
+             max_shared_surface_size: 2048,
+             enable_debugger: true,
++            opaque_backdrop_fallback: false,
+         }
+     }
+ }
+@@ -829,6 +832,7 @@ pub fn create_webrender_instance(
+         buffer_damage_tracker: BufferDamageTracker::default(),
+         max_primitive_instance_count,
+         enable_instancing: options.enable_instancing,
++        opaque_backdrop_fallback: options.opaque_backdrop_fallback,
+         use_shared_instance_buffer,
+         consecutive_oom_frames: 0,
+         target_frame_publish_id: None,
+diff --git a/gfx/wr/webrender/src/renderer/mod.rs b/gfx/wr/webrender/src/renderer/mod.rs
+index 925e1fe63f..729c39a9f4 100644
+--- a/gfx/wr/webrender/src/renderer/mod.rs
++++ b/gfx/wr/webrender/src/renderer/mod.rs
+@@ -842,6 +842,8 @@ pub struct Renderer {
+     /// draws, rather than allocating a new instance buffer for each draw.
+     use_shared_instance_buffer: bool,
+ 
++    opaque_backdrop_fallback: bool,
++
+     /// Count consecutive oom frames to detectif we are stuck unable to render
+     /// in a loop.
+     consecutive_oom_frames: u32,
+@@ -2826,14 +2828,25 @@ impl Renderer {
+                 // Should always be drawing to picture cache tiles or off-screen surface!
+                 debug_assert!(!draw_target.is_default());
+                 let device_to_framebuffer = Scale::new(1i32);
++                let dest_fb_rect = dest * device_to_framebuffer;
+ 
+                 self.device.blit_render_target(
+                     read_target,
+                     src * device_to_framebuffer,
+                     draw_target,
+-                    dest * device_to_framebuffer,
++                    dest_fb_rect,
+                     TextureFilter::Linear,
+                 );
++
++                if self.opaque_backdrop_fallback {
++                    self.device.set_color_mask(false, false, false, true);
++                    self.device.clear_target(
++                        Some([0.0, 0.0, 0.0, 1.0]),
++                        None,
++                        Some(dest_fb_rect),
++                    );
++                    self.device.set_color_mask(true, true, true, true);
++                }
+             }
+         }
+     }
+diff --git a/modules/libpref/init/StaticPrefList.yaml b/modules/libpref/init/StaticPrefList.yaml
+index b67ce56c8c..b4e693d5ee 100644
+--- a/modules/libpref/init/StaticPrefList.yaml
++++ b/modules/libpref/init/StaticPrefList.yaml
+@@ -8749,6 +8749,13 @@
+ #endif
+   mirror: once
+ 
++# Make backdrop-filter treat its captured backdrop as if it had been
++# composited over an opaque-black background. (See bug 2036640)
++- name: gfx.webrender.opaque-backdrop-fallback
++  type: bool
++  value: true
++  mirror: once
++
+ # Disable wait of GPU execution completion
+ - name: gfx.webrender.wait-gpu-finished.disabled
+   type: bool

@@ -61,7 +61,9 @@ Switch spaces by swiping two fingers horizontally over the sidebar or toolbar, o
 
 ## Credits
 
-Pane's workspace swipe handling is adapted from [Zen Browser](https://github.com/zen-browser/desktop)'s `ZenSpacesSwipe`, used under MPL-2.0. Pane is not affiliated with or endorsed by Zen Browser or Mozilla.
+Pane's workspace swipe handling is adapted from [Zen Browser](https://github.com/zen-browser/desktop)'s `ZenSpacesSwipe`, its gradient theming is inspired by `ZenGradientGenerator`, and `overlay/patches/allow-backdrop-transparency.patch` is rebased from Zen's `allow_backdrop_to_work_on_transparency` patch. All are used under MPL-2.0. Pane is not affiliated with or endorsed by Zen Browser or Mozilla.
+
+Patches in `overlay/patches/` are applied to the Gecko checkout during bootstrap and build. If one stops applying after a Gecko update, rebase it against the new revision rather than skipping it.
 
 Bundled extensions are installed when a profile first starts after installing or upgrading Pane. When testing a rebuilt app against a profile that previously removed a bundled extension, use a fresh profile from `about:profiles` because Gecko preserves explicit uninstall choices.
 

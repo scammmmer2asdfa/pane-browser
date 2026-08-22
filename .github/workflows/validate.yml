@@ -49,7 +49,7 @@ jobs:
           printf '        content/browser/browser-main.js                     (content/browser-main.js)\n' > "$RUNNER_TEMP/gecko/browser/base/jar.mn"
           printf '  Services.scriptloader.loadSubScript("chrome://browser/content/browser-init.js", this);\n' > "$RUNNER_TEMP/gecko/browser/base/content/browser-main.js"
           printf '  <link rel="stylesheet" href="chrome://browser/skin/" />\n' > "$RUNNER_TEMP/gecko/browser/base/content/browser.xhtml"
-          GECKO_DIR="$RUNNER_TEMP/gecko" ./scripts/apply-overlay.sh
+          GECKO_DIR="$RUNNER_TEMP/gecko" PANE_SKIP_PATCHES=1 ./scripts/apply-overlay.sh
           grep -q 'app/profile/pane.js' "$RUNNER_TEMP/gecko/browser/moz.build"
           test -f "$RUNNER_TEMP/gecko/browser/app/profile/pane.js"
           test -f "$RUNNER_TEMP/gecko/browser/base/content/pane/pane-chrome.js"

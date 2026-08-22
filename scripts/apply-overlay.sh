@@ -76,4 +76,19 @@ path.write_text(text.replace(needle, needle + addition, 1))
 PY
 fi
 
+# CI validates the overlay against a stub tree that has no Gecko sources to patch.
+if [[ "${PANE_SKIP_PATCHES:-0}" != "1" ]]; then
+  for patch in "$OVERLAY"/patches/*.patch; do
+    [[ -e "$patch" ]] || continue
+    if git -C "$GECKO" apply --reverse --check -p1 "$patch" 2>/dev/null; then
+      echo "Already applied: $(basename "$patch")"
+    elif git -C "$GECKO" apply -p1 "$patch"; then
+      echo "Applied patch: $(basename "$patch")"
+    else
+      echo "Patch failed against this Gecko revision: $(basename "$patch")" >&2
+      exit 1
+    fi
+  done
+fi
+
 echo "Pane overlay applied to $GECKO"
