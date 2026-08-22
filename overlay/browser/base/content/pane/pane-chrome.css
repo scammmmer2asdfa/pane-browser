@@ -1,0 +1,181 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0. */
+
+:root {
+  --pane-radius: 10px;
+  --pane-blur: 18px;
+  --pane-accent: #3b6ff5;
+  --pane-bg: #15171c;
+  --pane-surface: #20232a;
+  --pane-text: #f2f4f8;
+  --pane-font: "SF Pro Text";
+  --pane-duration: 120ms;
+  --pane-rail-size: 64px;
+}
+
+:root[pane-glass] #navigator-toolbox,
+:root[pane-glass] #sidebar-main,
+:root[pane-glass] #pane-workspace-rail,
+:root[pane-glass] #pane-customizer {
+  background-color: color-mix(in srgb, var(--pane-surface) 76%, transparent) !important;
+  backdrop-filter: blur(var(--pane-blur)) saturate(1.25);
+}
+
+#navigator-toolbox,
+#sidebar-main,
+#sidebar-box,
+#urlbar-background,
+.tabbrowser-tab,
+.tab-background,
+menupopup,
+panel,
+.panel-arrowcontent {
+  border-radius: var(--pane-radius) !important;
+}
+
+#navigator-toolbox,
+#sidebar-main,
+#sidebar-box {
+  background-color: var(--pane-surface) !important;
+  color: var(--pane-text) !important;
+  font-family: var(--pane-font), system-ui, sans-serif !important;
+}
+
+#urlbar[open] > #urlbar-background,
+.tabbrowser-tab[selected] .tab-background {
+  outline: 1px solid color-mix(in srgb, var(--pane-accent) 72%, transparent) !important;
+  box-shadow: 0 8px calc(var(--pane-blur) * .7) color-mix(in srgb, var(--pane-accent) 18%, transparent) !important;
+}
+
+#pane-workspace-rail {
+  position: fixed;
+  z-index: 2147483000;
+  inset-block: 76px 10px;
+  inset-inline-start: 8px;
+  width: var(--pane-rail-size);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 6px;
+  overflow: hidden;
+  color: var(--pane-text);
+  background: var(--pane-surface);
+  border: 1px solid color-mix(in srgb, var(--pane-text) 12%, transparent);
+  border-radius: var(--pane-radius);
+  box-shadow: 0 12px 36px rgb(0 0 0 / .24);
+}
+
+:root[pane-layout="left"] #sidebar-main {
+  margin-inline-start: calc(var(--pane-rail-size) + 10px) !important;
+}
+
+:root[pane-layout="right"] #sidebar-main {
+  margin-inline-end: calc(var(--pane-rail-size) + 10px) !important;
+}
+
+:root[pane-layout="right"] #pane-workspace-rail {
+  inset-inline-start: auto;
+  inset-inline-end: 8px;
+}
+
+:root[pane-layout="top"] #pane-workspace-rail {
+  inset-block: auto 8px;
+  inset-inline: 50% auto;
+  width: auto;
+  height: var(--pane-rail-size);
+  max-width: min(760px, 80vw);
+  flex-direction: row;
+  transform: translateX(-50%);
+}
+
+:root[pane-layout="floating"] #pane-workspace-rail {
+  opacity: .18;
+  transform: translateX(calc(-100% + 12px));
+  transition: opacity 160ms ease, transform 160ms ease;
+  transition-duration: var(--pane-duration);
+}
+
+:root[pane-layout="floating"] #pane-workspace-rail:hover,
+:root[pane-layout="floating"] #pane-workspace-rail:focus-within {
+  opacity: 1;
+  transform: none;
+}
+
+#pane-window-name {
+  overflow: hidden;
+  padding: 4px 2px;
+  color: color-mix(in srgb, var(--pane-text) 70%, transparent);
+  font: 600 10px/1.2 system-ui;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#pane-workspace-list {
+  min-height: 0;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 6px;
+  overflow: auto;
+  scrollbar-width: none;
+}
+
+:root[pane-layout="top"] #pane-workspace-list { flex-direction: row; }
+
+.pane-workspace,
+.pane-rail-actions button,
+#pane-customizer button {
+  appearance: none;
+  min-width: 42px;
+  min-height: 42px;
+  border: 1px solid transparent;
+  border-radius: var(--pane-radius);
+  color: var(--pane-text);
+  background: color-mix(in srgb, var(--pane-text) 7%, transparent);
+  font: 600 13px system-ui;
+  transition: background var(--pane-duration), border-color var(--pane-duration), transform var(--pane-duration);
+}
+
+.pane-workspace { position: relative; display: grid; place-items: center; }
+.pane-workspace small { display: none; }
+.pane-workspace:hover { background: color-mix(in srgb, var(--pane-accent) 18%, transparent); }
+.pane-workspace[aria-selected="true"] {
+  color: white;
+  background: var(--pane-accent);
+  box-shadow: 0 5px 18px color-mix(in srgb, var(--pane-accent) 38%, transparent);
+}
+
+.pane-rail-actions { display: flex; flex-direction: column; gap: 6px; }
+:root[pane-layout="top"] .pane-rail-actions { flex-direction: row; }
+
+#pane-customizer {
+  position: fixed;
+  z-index: 2147483001;
+  inset-block-start: 86px;
+  inset-inline-start: 82px;
+  width: 300px;
+  padding: 16px;
+  color: var(--pane-text);
+  background: var(--pane-surface);
+  border: 1px solid color-mix(in srgb, var(--pane-text) 15%, transparent);
+  border-radius: var(--pane-radius);
+  box-shadow: 0 16px 50px rgb(0 0 0 / .35);
+  font: 13px system-ui;
+  font-family: var(--pane-font), system-ui, sans-serif;
+}
+
+:root[pane-layout="right"] #pane-customizer { inset-inline: auto 82px; }
+#pane-customizer[hidden] { display: none; }
+#pane-customizer header { display: flex; align-items: center; justify-content: space-between; margin-block-end: 12px; }
+#pane-customizer label { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 8px; margin-block: 10px; }
+#pane-customizer label input[type="range"], #pane-customizer label select { grid-column: 1 / -1; width: 100%; }
+#pane-customizer input[type="color"] { width: 42px; height: 28px; padding: 0; border: 0; background: none; }
+#pane-customizer select { padding: 6px; color: var(--pane-text); background: var(--pane-bg); border-radius: calc(var(--pane-radius) * .7); }
+
+@media (prefers-reduced-transparency: reduce) {
+  :root { --pane-blur: 0px !important; }
+  :root[pane-glass] #navigator-toolbox,
+  :root[pane-glass] #sidebar-main,
+  :root[pane-glass] #pane-workspace-rail,
+  :root[pane-glass] #pane-customizer { backdrop-filter: none; }
+}

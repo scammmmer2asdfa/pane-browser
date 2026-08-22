@@ -7,6 +7,7 @@ GECKO_REPO="${GECKO_REPO:-https://github.com/mozilla-firefox/firefox.git}"
 GECKO_REF="${GECKO_REF:-main}"
 
 [[ "$(uname -s)" == "Darwin" ]] || { echo "Run this bootstrap on macOS." >&2; exit 1; }
+[[ "$ROOT" != *" "* ]] || { echo "Gecko cannot build from a path containing spaces. Clone Pane into a path such as ~/pane-browser." >&2; exit 1; }
 command -v git >/dev/null || { echo "Install Xcode Command Line Tools: xcode-select --install" >&2; exit 1; }
 command -v python3 >/dev/null || { echo "Install Python 3: brew install python@3.11" >&2; exit 1; }
 

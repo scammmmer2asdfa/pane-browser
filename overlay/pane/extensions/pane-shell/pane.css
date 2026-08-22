@@ -20,6 +20,14 @@ body {
   color: var(--pane-text);
   font: 15px/1.45 var(--pane-font);
 }
+body::before {
+  content: "";
+  position: fixed;
+  z-index: -1;
+  inset: -60px;
+  background: color-mix(in srgb, var(--pane-surface) 42%, transparent);
+  backdrop-filter: blur(var(--pane-blur));
+}
 button, input, select { font: inherit; }
 button, .site, .panel {
   border: 1px solid color-mix(in srgb, var(--pane-muted) 24%, transparent);

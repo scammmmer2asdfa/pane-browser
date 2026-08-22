@@ -26,18 +26,32 @@ jobs:
           for file in overlay/pane/extensions/pane-shell/*.js; do
             node --check "$file"
           done
+          node --check overlay/browser/base/content/pane/pane-chrome.js
       - name: Confirm Gecko integration points
         run: |
           grep -q 'browser.profiles.enabled' overlay/pane/prefs/pane.js
           grep -q 'browser.migrate.chrome' overlay/pane/prefs/pane.js
+          grep -q 'extensions.installDistroAddons' overlay/pane/prefs/pane.js
           grep -q 'about:preferences#general-migrate' overlay/pane/extensions/pane-shell/settings.js
           grep -q 'uBlock0@raymondhill.net' scripts/install-extensions.sh
+      - name: Test bundled extensions
+        run: |
+          destination="$(mktemp -d)"
+          ./scripts/install-extensions.sh "$destination"
+          test -s "$destination/distribution/extensions/pane-shell@pane.browser.xpi"
+          test -s "$destination/distribution/extensions/uBlock0@raymondhill.net.xpi"
       - name: Test overlay application
         run: |
-          mkdir -p "$RUNNER_TEMP/gecko/browser/branding/unofficial" "$RUNNER_TEMP/gecko/browser/app/profile"
+          mkdir -p "$RUNNER_TEMP/gecko/browser/branding/unofficial" "$RUNNER_TEMP/gecko/browser/app/profile" "$RUNNER_TEMP/gecko/browser/base/content"
           touch "$RUNNER_TEMP/gecko/mach"
           printf 'JS_PREFERENCE_PP_FILES += [\n    "app/profile/firefox.js",\n]\n' > "$RUNNER_TEMP/gecko/browser/moz.build"
           printf 'MOZ_APP_DISPLAYNAME=Nightly\n' > "$RUNNER_TEMP/gecko/browser/branding/unofficial/configure.sh"
+          printf '        content/browser/browser-main.js                     (content/browser-main.js)\n' > "$RUNNER_TEMP/gecko/browser/base/jar.mn"
+          printf '  Services.scriptloader.loadSubScript("chrome://browser/content/browser-init.js", this);\n' > "$RUNNER_TEMP/gecko/browser/base/content/browser-main.js"
+          printf '  <link rel="stylesheet" href="chrome://browser/skin/" />\n' > "$RUNNER_TEMP/gecko/browser/base/content/browser.xhtml"
           GECKO_DIR="$RUNNER_TEMP/gecko" ./scripts/apply-overlay.sh
           grep -q 'app/profile/pane.js' "$RUNNER_TEMP/gecko/browser/moz.build"
           test -f "$RUNNER_TEMP/gecko/browser/app/profile/pane.js"
+          test -f "$RUNNER_TEMP/gecko/browser/base/content/pane/pane-chrome.js"
+          grep -q 'pane/pane-chrome.js' "$RUNNER_TEMP/gecko/browser/base/jar.mn"
+          grep -q 'pane/pane-chrome.css' "$RUNNER_TEMP/gecko/browser/base/content/browser.xhtml"

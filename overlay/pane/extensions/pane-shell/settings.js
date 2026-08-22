@@ -5,6 +5,8 @@ const DEFAULT_THEME = {
 };
 const fields = {
   appearance: document.querySelector("#appearance"), accent: document.querySelector("#accent"),
+  background: document.querySelector("#background"), surface: document.querySelector("#surface"),
+  text: document.querySelector("#text"),
   fontFamily: document.querySelector("#font"), radius: document.querySelector("#radius"),
   blur: document.querySelector("#blur"), animation: document.querySelector("#animation")
 };
@@ -18,6 +20,9 @@ function setStatus(message) {
 function renderTheme(theme) {
   fields.appearance.value = theme.appearance;
   fields.accent.value = theme.accent;
+  fields.background.value = theme.background;
+  fields.surface.value = theme.surface;
+  fields.text.value = theme.text;
   fields.fontFamily.value = theme.fontFamily;
   fields.radius.value = theme.radius;
   fields.blur.value = theme.blur;
@@ -31,6 +36,8 @@ async function saveTheme() {
   const theme = {
     ...DEFAULT_THEME, ...(stored.theme || {}),
     appearance: fields.appearance.value, accent: fields.accent.value,
+    background: fields.background.value, surface: fields.surface.value,
+    text: fields.text.value,
     fontFamily: fields.fontFamily.value.trim() || DEFAULT_THEME.fontFamily,
     radius: Number(fields.radius.value), blur: Number(fields.blur.value),
     animation: fields.animation.value

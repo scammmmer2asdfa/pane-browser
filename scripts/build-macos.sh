@@ -7,6 +7,7 @@ CONFIG="${CONFIG:-release}"
 MOZCONFIG_FILE="$ROOT/mozconfig/macos-$CONFIG.mozconfig"
 
 [[ "$(uname -s)" == "Darwin" ]] || { echo "Pane's macOS build must run on macOS." >&2; exit 1; }
+[[ "$ROOT" != *" "* ]] || { echo "Gecko cannot build from a path containing spaces. Move this checkout to a path such as ~/pane-browser." >&2; exit 1; }
 [[ -x "$GECKO/mach" ]] || { echo "Run ./scripts/bootstrap-macos.sh first." >&2; exit 1; }
 [[ -f "$MOZCONFIG_FILE" ]] || { echo "Unknown CONFIG=$CONFIG" >&2; exit 1; }
 
@@ -24,6 +25,8 @@ fi
 [[ -n "$APP" && -d "$APP" ]] || { echo "Built app bundle not found under $OBJDIR/dist" >&2; exit 1; }
 
 "$ROOT/scripts/install-extensions.sh" "$APP/Contents/Resources"
+test -s "$APP/Contents/Resources/distribution/extensions/pane-shell@pane.browser.xpi"
+test -s "$APP/Contents/Resources/distribution/extensions/uBlock0@raymondhill.net.xpi"
 
 if [[ -n "${MACOS_SIGN_IDENTITY:-}" ]]; then
   codesign --force --deep --options runtime --timestamp --sign "$MACOS_SIGN_IDENTITY" "$APP"

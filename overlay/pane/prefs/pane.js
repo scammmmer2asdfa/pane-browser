@@ -42,6 +42,11 @@ pref("signon.rememberSignons", true);
 pref("signon.generation.enabled", true);
 pref("signon.management.page.breach-alerts.enabled", true);
 
+// Install signed extensions shipped in Pane.app/distribution on first profile use.
+pref("extensions.installDistroAddons", true);
+pref("extensions.autoDisableScopes", 0);
+pref("extensions.enabledScopes", 15);
+
 // Optional services remain inactive until the user explicitly enables them.
 pref("identity.fxaccounts.enabled", true);
 pref("browser.safebrowsing.malware.enabled", false);
@@ -65,7 +70,7 @@ pref("devtools.chrome.enabled", true);
 pref("devtools.debugger.remote-enabled", false);
 
 // Pane appearance model. The shell extension owns the matching WebUI values.
-pref("pane.tabs.position", "top");
+pref("pane.tabs.position", "left");
 pref("pane.tabs.floating", false);
 pref("pane.appearance.radius", 10);
 pref("pane.appearance.blur", 18);
@@ -73,6 +78,9 @@ pref("pane.appearance.font", "SF Pro Text");
 pref("pane.appearance.animation", "minimal");
 pref("pane.appearance.mode", "system");
 pref("pane.appearance.accent", "#3B6FF5");
+pref("pane.appearance.background", "#15171C");
+pref("pane.appearance.surface", "#20232A");
+pref("pane.appearance.text", "#F2F4F8");
 pref("pane.newtab.mode", "dashboard");
 
 // Keep the complete native migration wizard, including browser data imports.
