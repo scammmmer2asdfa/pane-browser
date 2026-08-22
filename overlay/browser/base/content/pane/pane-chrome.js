@@ -21,18 +21,11 @@ var PaneChrome = {
   WINDOW_NAME_KEY: "pane.windowName",
   HIDDEN_SOURCE: "pane-workspace",
   colors: ["blue", "turquoise", "green", "yellow", "orange", "red", "pink", "purple"],
-  icons: ["circle", "briefcase", "dollar", "cart", "vacation", "gift", "food", "fruit", "pet", "tree", "chill"],
 
   get SessionStore() {
     return ChromeUtils.importESModule(
       "moz-src:///browser/components/sessionstore/SessionStore.sys.mjs"
     ).SessionStore;
-  },
-
-  get ContextualIdentityService() {
-    return ChromeUtils.importESModule(
-      "moz-src:///toolkit/components/contextualidentity/ContextualIdentityService.sys.mjs"
-    ).ContextualIdentityService;
   },
 
   init() {
@@ -59,6 +52,7 @@ var PaneChrome = {
     const root = document.documentElement;
     root.style.setProperty("--pane-radius", `${this.pref(this.PREF.radius, 10)}px`);
     root.style.setProperty("--pane-blur", `${this.pref(this.PREF.blur, 18)}px`);
+    root.style.setProperty("--pane-blur-n", String(this.pref(this.PREF.blur, 18)));
     root.style.setProperty("--pane-accent", this.pref(this.PREF.accent, "#3B6FF5"));
     root.style.setProperty("--pane-bg", this.pref(this.PREF.background, "#15171c"));
     root.style.setProperty("--pane-surface", this.pref(this.PREF.surface, "#20232a"));
@@ -102,7 +96,7 @@ var PaneChrome = {
       workspaces = JSON.parse(this.SessionStore.getCustomWindowValue(window, this.WORKSPACES_KEY));
     } catch (_) {}
     if (!Array.isArray(workspaces) || !workspaces.length) {
-      workspaces = [{ id: crypto.randomUUID(), name: "Personal", color: "blue", icon: "circle", userContextId: 0 }];
+      workspaces = [{ id: crypto.randomUUID(), name: "Personal", color: "blue" }];
     }
     this.workspaces = workspaces;
     this.activeId = this.SessionStore.getCustomWindowValue(window, this.ACTIVE_KEY) || workspaces[0].id;
@@ -220,34 +214,26 @@ var PaneChrome = {
     }
     this.swipeDistance = 0;
     this.lastSwipeAt = 0;
-    document.getElementById("pane-workspace-rail").addEventListener("wheel", event => {
-      if (Math.abs(event.deltaX) <= Math.abs(event.deltaY)) return;
+    const onWheel = event => {
+      if (Math.abs(event.deltaX) <= Math.abs(event.deltaY) * 1.2) return;
       event.preventDefault();
       this.swipeDistance += event.deltaX;
       const now = Date.now();
-      if (Math.abs(this.swipeDistance) >= 45 && now - this.lastSwipeAt > 350) {
+      if (Math.abs(this.swipeDistance) >= 40 && now - this.lastSwipeAt > 300) {
         this.cycleWorkspace(this.swipeDistance > 0 ? 1 : -1);
         this.swipeDistance = 0;
         this.lastSwipeAt = now;
       }
-    }, { passive: false });
-    document.addEventListener("command", event => {
-      if (event.target?.id !== "cmd_newNavigatorTab") return;
-      const space = this.workspaces.find(item => item.id === this.activeId);
-      if (!space?.userContextId) return;
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      this.newWorkspaceTab();
-    }, true);
-    for (const id of ["tabs-newtab-button", "new-tab-button"]) {
-      document.getElementById(id)?.addEventListener("click", event => {
-        const space = this.workspaces.find(item => item.id === this.activeId);
-        if (!space?.userContextId) return;
-        event.preventDefault();
-        event.stopImmediatePropagation();
-        this.newWorkspaceTab();
-      }, true);
+    };
+    for (const id of ["sidebar-container", "navigator-toolbox", "pane-workspace-rail"]) {
+      document.getElementById(id)?.addEventListener("wheel", onWheel, { passive: false });
     }
+    window.addEventListener("keydown", event => {
+      if (!event.altKey || !(event.metaKey || event.ctrlKey)) return;
+      if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+      event.preventDefault();
+      this.cycleWorkspace(event.key === "ArrowRight" ? 1 : -1);
+    });
     gBrowser.tabContainer.addEventListener("TabOpen", event => {
       this.SessionStore.setCustomTabValue(event.target, "paneWorkspace", this.activeId);
     });
@@ -287,10 +273,8 @@ var PaneChrome = {
   async createWorkspace() {
     const name = prompt("Workspace name", `Workspace ${this.workspaces.length + 1}`)?.trim();
     if (!name) return;
-    Services.prefs.setBoolPref("privacy.userContext.enabled", true);
     const index = this.workspaces.length % this.colors.length;
-    const identity = this.ContextualIdentityService.create(name, this.icons[index % this.icons.length], this.colors[index]);
-    const space = { id: crypto.randomUUID(), name, color: this.colors[index], icon: this.icons[index % this.icons.length], userContextId: identity.userContextId };
+    const space = { id: crypto.randomUUID(), name, color: this.colors[index] };
     this.workspaces.push(space);
     this.saveState();
     this.renderWorkspaces();
@@ -302,7 +286,6 @@ var PaneChrome = {
     const name = prompt("Rename workspace", space.name)?.trim();
     if (!name) return;
     space.name = name;
-    if (space.userContextId) this.ContextualIdentityService.update(space.userContextId, name, space.icon, space.color);
     this.saveState();
     this.renderWorkspaces();
   },
@@ -318,7 +301,6 @@ var PaneChrome = {
         gBrowser.removeTab(tab, { animate: false });
       }
     }
-    if (space.userContextId) this.ContextualIdentityService.remove(space.userContextId);
     this.workspaces = this.workspaces.filter(item => item.id !== id);
     this.saveState();
     this.renderWorkspaces();
@@ -355,8 +337,7 @@ var PaneChrome = {
   },
 
   newWorkspaceTab() {
-    const space = this.workspaces.find(item => item.id === this.activeId);
-    const tab = gBrowser.addTrustedTab("about:newtab", { userContextId: space?.userContextId || 0 });
+    const tab = gBrowser.addTrustedTab("about:newtab");
     this.SessionStore.setCustomTabValue(tab, "paneWorkspace", this.activeId);
     gBrowser.selectedTab = tab;
     return tab;

@@ -13,24 +13,63 @@
   --pane-rail-size: 64px;
 }
 
-:root[pane-glass] #navigator-toolbox,
-:root[pane-glass] #sidebar-main,
-:root[pane-glass] #pane-workspace-rail,
-:root[pane-glass] #pane-customizer {
-  background-color: color-mix(in srgb, var(--pane-surface) 76%, transparent) !important;
-  backdrop-filter: blur(var(--pane-blur)) saturate(1.25);
+/* Override Gecko's own theme tokens so every chrome surface follows Pane. */
+:root {
+  --tab-border-radius: var(--pane-radius) !important;
+  --toolbarbutton-border-radius: var(--pane-radius) !important;
+  --arrowpanel-border-radius: var(--pane-radius) !important;
+  --urlbar-border-radius: var(--pane-radius) !important;
+  --border-radius-small: calc(var(--pane-radius) * .5) !important;
+  --border-radius-medium: var(--pane-radius) !important;
+  --border-radius-large: calc(var(--pane-radius) * 1.4) !important;
+
+  --toolbar-bgcolor: var(--pane-surface) !important;
+  --toolbar-color: var(--pane-text) !important;
+  --toolbox-bgcolor: var(--pane-surface) !important;
+  --toolbox-textcolor: var(--pane-text) !important;
+  --lwt-accent-color: var(--pane-surface) !important;
+  --lwt-text-color: var(--pane-text) !important;
+  --tabpanel-background-color: var(--pane-bg) !important;
+  --sidebar-background-color: var(--pane-surface) !important;
+  --sidebar-text-color: var(--pane-text) !important;
+  --toolbar-field-background-color: color-mix(in srgb, var(--pane-text) 8%, var(--pane-surface)) !important;
+  --toolbar-field-focus-background-color: color-mix(in srgb, var(--pane-text) 12%, var(--pane-surface)) !important;
+  --toolbar-field-color: var(--pane-text) !important;
+  --toolbar-field-focus-color: var(--pane-text) !important;
+  --arrowpanel-background: var(--pane-surface) !important;
+  --arrowpanel-color: var(--pane-text) !important;
+  --tab-selected-bgcolor: color-mix(in srgb, var(--pane-accent) 24%, var(--pane-surface)) !important;
+  --tab-selected-textcolor: var(--pane-text) !important;
+  --focus-outline-color: var(--pane-accent) !important;
+  --color-accent-primary: var(--pane-accent) !important;
+  --button-primary-bgcolor: var(--pane-accent) !important;
 }
 
 #navigator-toolbox,
 #sidebar-main,
-#sidebar-box,
-#urlbar-background,
-.tabbrowser-tab,
-.tab-background,
-menupopup,
-panel,
-.panel-arrowcontent {
-  border-radius: var(--pane-radius) !important;
+#sidebar-box {
+  font-family: var(--pane-font), system-ui, sans-serif !important;
+}
+
+/* Glass makes chrome translucent; backdrop-filter only shows where content sits behind. */
+:root[pane-glass] {
+  --toolbar-bgcolor: color-mix(in srgb, var(--pane-surface) 72%, transparent) !important;
+  --toolbox-bgcolor: color-mix(in srgb, var(--pane-surface) 72%, transparent) !important;
+  --sidebar-background-color: color-mix(in srgb, var(--pane-surface) 72%, transparent) !important;
+  --arrowpanel-background: color-mix(in srgb, var(--pane-surface) 78%, transparent) !important;
+}
+
+:root[pane-glass] :is(#navigator-toolbox, #sidebar-main, #sidebar-box, #pane-customizer, panel, menupopup, .panel-arrowcontent) {
+  backdrop-filter: blur(var(--pane-blur)) saturate(1.3);
+}
+
+/* Accent wash keeps the blur slider visible on chrome with no page behind it. */
+:root[pane-glass] :is(#navigator-toolbox, #sidebar-main) {
+  background-image: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--pane-accent) calc(var(--pane-blur-n, 18) * 1%), transparent),
+    transparent
+  ) !important;
 }
 
 :root[pane-layout="sidebar"] #sidebar-main {
@@ -39,18 +78,9 @@ panel,
   max-width: 420px !important;
 }
 
-#navigator-toolbox,
-#sidebar-main,
-#sidebar-box {
-  background-color: var(--pane-surface) !important;
-  color: var(--pane-text) !important;
-  font-family: var(--pane-font), system-ui, sans-serif !important;
-}
-
 #urlbar[open] > #urlbar-background,
 .tabbrowser-tab[selected] .tab-background {
   outline: 1px solid color-mix(in srgb, var(--pane-accent) 72%, transparent) !important;
-  box-shadow: 0 8px calc(var(--pane-blur) * .7) color-mix(in srgb, var(--pane-accent) 18%, transparent) !important;
 }
 
 #pane-workspace-rail {
@@ -156,9 +186,8 @@ panel,
 #pane-customizer select { padding: 6px; color: var(--pane-text); background: var(--pane-bg); border-radius: calc(var(--pane-radius) * .7); }
 
 @media (prefers-reduced-transparency: reduce) {
-  :root { --pane-blur: 0px !important; }
-  :root[pane-glass] #navigator-toolbox,
-  :root[pane-glass] #sidebar-main,
-  :root[pane-glass] #pane-workspace-rail,
-  :root[pane-glass] #pane-customizer { backdrop-filter: none; }
+  :root { --pane-blur: 0px !important; --pane-blur-n: 0 !important; }
+  :root[pane-glass] :is(#navigator-toolbox, #sidebar-main, #sidebar-box, #pane-customizer, panel, menupopup, .panel-arrowcontent) {
+    backdrop-filter: none;
+  }
 }
