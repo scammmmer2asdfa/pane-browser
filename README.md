@@ -53,9 +53,9 @@ Import copies supported data such as bookmarks, history, passwords, cookies, pay
 
 Chrome Web Store packages and Google Sync are Chromium services and cannot run natively on Gecko. Pane uses Firefox WebExtensions/Mozilla Add-ons and optional Firefox Sync instead. Chrome-family data migration remains supported through Gecko's native migrators.
 
-Pane keeps tabs and workspaces in one native vertical sidebar. Multiple toolbars keeps the address toolbar across the top, Single toolbar places the address bar in the sidebar, and Collapsed toolbar uses Gecko's expand-on-hover sidebar. The sidebar can be placed left or right and resized from Pane's native customizer. Tabs can be detached by dragging them into a new window.
+Pane keeps tabs and workspaces in one native sidebar. Sidebar tabs shows Gecko's vertical tab strip, Collapsed sidebar uses its expand-on-hover mode, and Top tabs returns to the horizontal tab strip. The sidebar can be placed left or right and resized from Pane's native customizer. Tabs can be detached by dragging them into a new window.
 
-Use the sun button in the workspace strip to customize native browser chrome and choose Multiple toolbars, Single toolbar, or Collapsed toolbar. Double-click a workspace to rename it, right-click to delete it, horizontally swipe the strip with two fingers to change workspaces, and use Rename window in the customizer to name that browser window. The gear on the new-tab page opens its separate page appearance controls.
+Use the sun button in the workspace strip to customize native browser chrome and choose Top tabs, Sidebar tabs, or Collapsed sidebar. Double-click a workspace to rename it, right-click to delete it, horizontally swipe the strip with two fingers to change workspaces, and use Rename window in the customizer to name that browser window. The gear on the new-tab page opens its separate page appearance controls.
 
 Bundled extensions are installed when a profile first starts after installing or upgrading Pane. When testing a rebuilt app against a profile that previously removed a bundled extension, use a fresh profile from `about:profiles` because Gecko preserves explicit uninstall choices.
 

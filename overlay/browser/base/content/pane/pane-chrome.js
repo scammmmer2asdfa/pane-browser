@@ -39,8 +39,6 @@ var PaneChrome = {
     if (window.toolbar?.visible === false || document.getElementById("pane-workspace-rail")) {
       return;
     }
-    const navBar = document.getElementById("nav-bar");
-    this.navBarHome = { parent: navBar.parentNode, next: navBar.nextSibling };
     this.applyAppearance();
     this.applyLayout();
     this.loadState();
@@ -76,12 +74,13 @@ var PaneChrome = {
   },
 
   applyLayout() {
-    let layout = this.pref(this.PREF.layout, "single");
+    let layout = this.pref(this.PREF.layout, "sidebar");
     let side = this.pref(this.PREF.side, "left");
     const legacyLayouts = {
-      top: ["multiple", side],
-      left: ["single", "left"],
-      right: ["single", "right"],
+      multiple: ["top", side],
+      single: ["sidebar", side],
+      left: ["sidebar", "left"],
+      right: ["sidebar", "right"],
       floating: ["collapsed", side],
     };
     if (legacyLayouts[layout]) {
@@ -89,13 +88,12 @@ var PaneChrome = {
       Services.prefs.setStringPref(this.PREF.layout, layout);
       Services.prefs.setStringPref(this.PREF.side, side);
     }
-    Services.prefs.setBoolPref("sidebar.verticalTabs", true);
+    Services.prefs.setBoolPref("sidebar.verticalTabs", layout !== "top");
     Services.prefs.setBoolPref("sidebar.position_start", side !== "right");
     Services.prefs.setStringPref("sidebar.visibility", layout === "collapsed" ? "expand-on-hover" : "always-show");
     document.documentElement.setAttribute("pane-layout", layout);
     document.documentElement.setAttribute("pane-side", side);
     if (document.getElementById("pane-workspace-rail")) this.placeRail();
-    if (this.navBarHome) this.placeNavigationToolbar();
   },
 
   loadState() {
@@ -141,24 +139,16 @@ var PaneChrome = {
   placeRail() {
     const rail = document.getElementById("pane-workspace-rail");
     if (!rail) return;
+    if (this.pref(this.PREF.layout, "sidebar") === "top") {
+      rail.removeAttribute("slot");
+      document.getElementById("navigator-toolbox").append(rail);
+      return;
+    }
     rail.slot = "tabstrip";
     document.querySelector("sidebar-main").insertBefore(
       rail,
       document.getElementById("vertical-tabs")
     );
-  },
-
-  placeNavigationToolbar() {
-    const navBar = document.getElementById("nav-bar");
-    const single = this.pref(this.PREF.layout, "single") === "single";
-    navBar.toggleAttribute("pane-sidebar-navbar", single);
-    if (single) {
-      document.getElementById("vertical-tabs").prepend(navBar);
-      return;
-    }
-    const { parent, next } = this.navBarHome;
-    if (next?.parentNode === parent) parent.insertBefore(navBar, next);
-    else parent.append(navBar);
   },
 
   createCustomizer() {
@@ -167,7 +157,7 @@ var PaneChrome = {
     panel.hidden = true;
     panel.innerHTML = `
       <header><strong>Customize Pane</strong><button id="pane-customizer-close" aria-label="Close">&#x2715;</button></header>
-      <label>Browser layout<select id="pane-layout"><option value="multiple">Multiple toolbars</option><option value="single">Single toolbar</option><option value="collapsed">Collapsed toolbar</option></select></label>
+      <label>Tab layout<select id="pane-layout"><option value="top">Top tabs</option><option value="sidebar">Sidebar tabs</option><option value="collapsed">Collapsed sidebar</option></select></label>
       <label>Sidebar side<select id="pane-side"><option value="left">Left</option><option value="right">Right</option></select></label>
       <label>Sidebar width <output id="pane-width-value"></output><input id="pane-width" type="range" min="190" max="420" step="2"></label>
       <label>Roundness <output id="pane-radius-value"></output><input id="pane-radius" type="range" min="0" max="24" step="1"></label>
@@ -187,7 +177,7 @@ var PaneChrome = {
       surface: this.pref(this.PREF.surface, "#20232a"), text: this.pref(this.PREF.text, "#f2f4f8"),
       font: this.pref(this.PREF.font, "SF Pro Text"), animation: this.pref(this.PREF.animation, "minimal"),
       appearance: this.pref(this.PREF.appearance, "system"),
-      layout: this.pref(this.PREF.layout, "single"), side: this.pref(this.PREF.side, "left"),
+      layout: this.pref(this.PREF.layout, "sidebar"), side: this.pref(this.PREF.side, "left"),
     };
     for (const [key, value] of Object.entries(values)) document.getElementById(`pane-${key}`).value = value;
     this.updateOutputs();

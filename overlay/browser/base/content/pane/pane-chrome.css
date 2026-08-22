@@ -33,7 +33,7 @@ panel,
   border-radius: var(--pane-radius) !important;
 }
 
-:root:is([pane-layout="single"], [pane-layout="multiple"]) #sidebar-container {
+:root[pane-layout="sidebar"] #sidebar-main {
   width: var(--pane-sidebar-width) !important;
   min-width: 190px !important;
   max-width: 420px !important;
@@ -56,62 +56,31 @@ panel,
 #pane-workspace-rail {
   position: relative;
   z-index: 2;
-  width: auto;
+  flex: 0 0 auto;
   min-width: 0;
-  height: auto;
-  max-height: 116px;
   display: flex;
   flex-direction: row;
-  gap: 8px;
-  flex: 0 0 auto;
-  padding: 7px;
-  margin: 6px 6px 2px;
+  align-items: center;
+  gap: 6px;
+  padding: 4px;
+  margin: 4px 6px 0;
   overflow: hidden;
   color: var(--pane-text);
-  background: var(--pane-surface);
-  border: 0;
   border-radius: var(--pane-radius);
-  box-shadow: none;
 }
 
-#nav-bar[pane-sidebar-navbar] {
-  min-width: 0 !important;
-  width: auto !important;
-  padding: 4px 6px !important;
-  margin: 0 !important;
-  flex: 0 0 auto !important;
-  border-radius: var(--pane-radius);
-  background: transparent !important;
-}
-
-#vertical-tabs:has(#nav-bar[pane-sidebar-navbar]) {
-  min-height: 0;
-  flex-direction: column !important;
-}
-
-#nav-bar[pane-sidebar-navbar] #nav-bar-customization-target {
-  min-width: 0;
-  width: 100%;
-}
-
-#nav-bar[pane-sidebar-navbar] #urlbar-container {
-  min-width: 80px !important;
-  width: 100% !important;
-  max-width: none !important;
-  padding-inline: 0 !important;
-}
-
-#nav-bar[pane-sidebar-navbar] :is(#back-button, #forward-button, #reload-button, #stop-button, #home-button),
-#nav-bar[pane-sidebar-navbar] toolbaritem:not(#urlbar-container),
-#nav-bar[pane-sidebar-navbar] toolbarspring {
-  display: none !important;
+:root[pane-layout="top"] #pane-workspace-rail {
+  width: min-content;
+  max-width: calc(100vw - 24px);
+  align-self: center;
+  margin-block: 0 4px;
+  background: color-mix(in srgb, var(--pane-text) 6%, transparent);
 }
 
 :root[pane-layout="collapsed"] #pane-workspace-rail {
   flex-direction: column;
-  max-height: min(48vh, 420px);
   margin: 3px;
-  padding: 4px;
+  padding: 3px;
   gap: 4px;
 }
 
@@ -120,15 +89,11 @@ panel,
   flex-direction: column;
 }
 
-:root[pane-layout="collapsed"] .pane-workspace {
-  flex-basis: 34px;
-  min-width: 34px;
-  min-height: 34px;
-}
-
+:root[pane-layout="collapsed"] .pane-workspace,
 :root[pane-layout="collapsed"] .pane-rail-actions button {
-  min-width: 34px;
-  min-height: 34px;
+  flex-basis: 28px;
+  min-width: 28px;
+  min-height: 28px;
 }
 
 #pane-workspace-list {
@@ -145,8 +110,8 @@ panel,
 .pane-rail-actions button,
 #pane-customizer button {
   appearance: none;
-  min-width: 42px;
-  min-height: 42px;
+  min-width: 30px;
+  min-height: 30px;
   border: 1px solid transparent;
   border-radius: var(--pane-radius);
   color: var(--pane-text);
@@ -155,7 +120,7 @@ panel,
   transition: background var(--pane-duration), border-color var(--pane-duration), transform var(--pane-duration);
 }
 
-.pane-workspace { position: relative; display: grid; place-items: center; flex: 0 0 38px; min-width: 38px; min-height: 38px; }
+.pane-workspace { position: relative; display: grid; place-items: center; flex: 0 0 30px; }
 .pane-workspace small { display: none; }
 .pane-workspace:hover { background: color-mix(in srgb, var(--pane-accent) 18%, transparent); }
 .pane-workspace[aria-selected="true"] {
@@ -165,7 +130,6 @@ panel,
 }
 
 .pane-rail-actions { display: flex; flex-direction: row; gap: 6px; }
-.pane-rail-actions button { min-width: 34px; min-height: 38px; }
 
 #pane-customizer {
   position: fixed;

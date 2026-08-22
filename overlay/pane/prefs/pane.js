@@ -70,7 +70,7 @@ pref("devtools.chrome.enabled", true);
 pref("devtools.debugger.remote-enabled", false);
 
 // Pane appearance model. The shell extension owns the matching WebUI values.
-pref("pane.tabs.position", "single");
+pref("pane.tabs.position", "sidebar");
 pref("pane.tabs.side", "left");
 pref("pane.tabs.width", 248);
 pref("pane.tabs.floating", false);
