@@ -57,10 +57,9 @@ async function geocodeLocation(name) {
 }
 
 async function load() {
-  const stored = await browser.storage.local.get(["theme", "newTabMode", "tabPosition", "weatherLocation"]);
+  const stored = await browser.storage.local.get(["theme", "newTabMode", "weatherLocation"]);
   renderTheme({ ...DEFAULT_THEME, ...(stored.theme || {}) });
   document.querySelector("#new-tab-mode").value = stored.newTabMode || "dashboard";
-  document.querySelector("#tab-position").value = stored.tabPosition || "top";
   document.querySelector("#weather-location").value = stored.weatherLocation?.name || "";
 }
 
@@ -69,10 +68,6 @@ for (const id of ["radius", "blur"]) fields[id].addEventListener("input", () => 
   document.querySelector(`#${id}-value`).textContent = `${fields[id].value}px`;
 });
 document.querySelector("#new-tab-mode").addEventListener("change", event => browser.storage.local.set({ newTabMode: event.target.value }));
-document.querySelector("#tab-position").addEventListener("change", event => {
-  browser.storage.local.set({ tabPosition: event.target.value });
-  setStatus("Tab layout saved; apply it from Pane's tab toolbar menu");
-});
 document.querySelector("#weather-location").addEventListener("change", async event => {
   try {
     const weatherLocation = await geocodeLocation(event.target.value);

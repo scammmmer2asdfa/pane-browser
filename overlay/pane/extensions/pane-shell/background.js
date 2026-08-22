@@ -57,7 +57,7 @@ async function cycleAppearance() {
 
 browser.runtime.onInstalled.addListener(async () => {
   const theme = await getTheme();
-  await browser.storage.local.set({ theme, newTabMode: "dashboard", tabPosition: "top" });
+  await browser.storage.local.set({ theme, newTabMode: "dashboard" });
   await applyBrowserTheme(theme);
 });
 

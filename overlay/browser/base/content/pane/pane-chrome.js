@@ -13,6 +13,8 @@ var PaneChrome = {
     animation: "pane.appearance.animation",
     appearance: "pane.appearance.mode",
     layout: "pane.tabs.position",
+    side: "pane.tabs.side",
+    width: "pane.tabs.width",
   },
   WORKSPACES_KEY: "pane.workspaces",
   ACTIVE_KEY: "pane.activeWorkspace",
@@ -37,6 +39,8 @@ var PaneChrome = {
     if (window.toolbar?.visible === false || document.getElementById("pane-workspace-rail")) {
       return;
     }
+    const navBar = document.getElementById("nav-bar");
+    this.navBarHome = { parent: navBar.parentNode, next: navBar.nextSibling };
     this.applyAppearance();
     this.applyLayout();
     this.loadState();
@@ -62,6 +66,7 @@ var PaneChrome = {
     root.style.setProperty("--pane-surface", this.pref(this.PREF.surface, "#20232a"));
     root.style.setProperty("--pane-text", this.pref(this.PREF.text, "#f2f4f8"));
     root.style.setProperty("--pane-font", this.pref(this.PREF.font, "SF Pro Text"));
+    root.style.setProperty("--pane-sidebar-width", `${this.pref(this.PREF.width, 248)}px`);
     const animation = this.pref(this.PREF.animation, "minimal");
     root.style.setProperty("--pane-duration", animation === "off" ? "0ms" : animation === "full" ? "280ms" : "120ms");
     const appearance = this.pref(this.PREF.appearance, "system");
@@ -71,11 +76,26 @@ var PaneChrome = {
   },
 
   applyLayout() {
-    const layout = this.pref(this.PREF.layout, "left");
-    const vertical = layout === "left" || layout === "right" || layout === "floating";
-    Services.prefs.setBoolPref("sidebar.verticalTabs", vertical);
-    Services.prefs.setBoolPref("sidebar.position_start", layout !== "right");
+    let layout = this.pref(this.PREF.layout, "single");
+    let side = this.pref(this.PREF.side, "left");
+    const legacyLayouts = {
+      top: ["multiple", side],
+      left: ["single", "left"],
+      right: ["single", "right"],
+      floating: ["collapsed", side],
+    };
+    if (legacyLayouts[layout]) {
+      [layout, side] = legacyLayouts[layout];
+      Services.prefs.setStringPref(this.PREF.layout, layout);
+      Services.prefs.setStringPref(this.PREF.side, side);
+    }
+    Services.prefs.setBoolPref("sidebar.verticalTabs", true);
+    Services.prefs.setBoolPref("sidebar.position_start", side !== "right");
+    Services.prefs.setStringPref("sidebar.visibility", layout === "collapsed" ? "expand-on-hover" : "always-show");
     document.documentElement.setAttribute("pane-layout", layout);
+    document.documentElement.setAttribute("pane-side", side);
+    if (document.getElementById("pane-workspace-rail")) this.placeRail();
+    if (this.navBarHome) this.placeNavigationToolbar();
   },
 
   loadState() {
@@ -105,18 +125,40 @@ var PaneChrome = {
   createRail() {
     const rail = document.createElement("aside");
     rail.id = "pane-workspace-rail";
+    rail.slot = "tabstrip";
     rail.setAttribute("aria-label", "Pane workspaces");
     rail.innerHTML = `
-      <div id="pane-window-name" title="Double-click to rename this window"></div>
       <div id="pane-workspace-list" role="tablist"></div>
       <div class="pane-rail-actions">
-        <button id="pane-new-tab" title="New tab in this workspace">+</button>
         <button id="pane-new-workspace" title="New workspace">&#x25C7;</button>
         <button id="pane-customize" title="Customize Pane">&#x263C;</button>
       </div>`;
-    document.body.append(rail);
+    this.placeRail();
     this.createCustomizer();
     this.renderWorkspaces();
+  },
+
+  placeRail() {
+    const rail = document.getElementById("pane-workspace-rail");
+    if (!rail) return;
+    rail.slot = "tabstrip";
+    document.querySelector("sidebar-main").insertBefore(
+      rail,
+      document.getElementById("vertical-tabs")
+    );
+  },
+
+  placeNavigationToolbar() {
+    const navBar = document.getElementById("nav-bar");
+    const single = this.pref(this.PREF.layout, "single") === "single";
+    navBar.toggleAttribute("pane-sidebar-navbar", single);
+    if (single) {
+      document.getElementById("vertical-tabs").prepend(navBar);
+      return;
+    }
+    const { parent, next } = this.navBarHome;
+    if (next?.parentNode === parent) parent.insertBefore(navBar, next);
+    else parent.append(navBar);
   },
 
   createCustomizer() {
@@ -125,7 +167,9 @@ var PaneChrome = {
     panel.hidden = true;
     panel.innerHTML = `
       <header><strong>Customize Pane</strong><button id="pane-customizer-close" aria-label="Close">&#x2715;</button></header>
-      <label>Layout<select id="pane-layout"><option value="top">Top tabs</option><option value="left">Left tabs</option><option value="right">Right tabs</option><option value="floating">Floating sidebar</option></select></label>
+      <label>Browser layout<select id="pane-layout"><option value="multiple">Multiple toolbars</option><option value="single">Single toolbar</option><option value="collapsed">Collapsed toolbar</option></select></label>
+      <label>Sidebar side<select id="pane-side"><option value="left">Left</option><option value="right">Right</option></select></label>
+      <label>Sidebar width <output id="pane-width-value"></output><input id="pane-width" type="range" min="190" max="420" step="2"></label>
       <label>Roundness <output id="pane-radius-value"></output><input id="pane-radius" type="range" min="0" max="24" step="1"></label>
       <label>Blur <output id="pane-blur-value"></output><input id="pane-blur" type="range" min="0" max="50" step="1"></label>
       <label>Main color<input id="pane-accent" type="color"></label>
@@ -138,19 +182,18 @@ var PaneChrome = {
       <button id="pane-rename-window">Rename window</button>`;
     document.body.append(panel);
     const values = {
-      radius: this.pref(this.PREF.radius, 10), blur: this.pref(this.PREF.blur, 18),
+      radius: this.pref(this.PREF.radius, 10), blur: this.pref(this.PREF.blur, 18), width: this.pref(this.PREF.width, 248),
       accent: this.pref(this.PREF.accent, "#3B6FF5"), background: this.pref(this.PREF.background, "#15171c"),
       surface: this.pref(this.PREF.surface, "#20232a"), text: this.pref(this.PREF.text, "#f2f4f8"),
       font: this.pref(this.PREF.font, "SF Pro Text"), animation: this.pref(this.PREF.animation, "minimal"),
       appearance: this.pref(this.PREF.appearance, "system"),
-      layout: this.pref(this.PREF.layout, "left"),
+      layout: this.pref(this.PREF.layout, "single"), side: this.pref(this.PREF.side, "left"),
     };
     for (const [key, value] of Object.entries(values)) document.getElementById(`pane-${key}`).value = value;
     this.updateOutputs();
   },
 
   bindEvents() {
-    document.getElementById("pane-new-tab").addEventListener("click", () => this.newWorkspaceTab());
     document.getElementById("pane-new-workspace").addEventListener("click", () => this.createWorkspace());
     document.getElementById("pane-customize").addEventListener("click", () => {
       const panel = document.getElementById("pane-customizer");
@@ -158,12 +201,15 @@ var PaneChrome = {
     });
     document.getElementById("pane-customizer-close").addEventListener("click", () => document.getElementById("pane-customizer").hidden = true);
     document.getElementById("pane-rename-window").addEventListener("click", () => this.renameWindow());
-    document.getElementById("pane-window-name").addEventListener("dblclick", () => this.renameWindow());
     document.getElementById("pane-layout").addEventListener("change", event => {
       Services.prefs.setStringPref(this.PREF.layout, event.target.value);
       this.applyLayout();
     });
-    for (const key of ["radius", "blur"]) {
+    document.getElementById("pane-side").addEventListener("change", event => {
+      Services.prefs.setStringPref(this.PREF.side, event.target.value);
+      this.applyLayout();
+    });
+    for (const key of ["radius", "blur", "width"]) {
       document.getElementById(`pane-${key}`).addEventListener("input", event => {
         Services.prefs.setIntPref(this.PREF[key], Number(event.target.value));
         this.applyAppearance();
@@ -223,6 +269,7 @@ var PaneChrome = {
   updateOutputs() {
     document.getElementById("pane-radius-value").value = `${this.pref(this.PREF.radius, 10)}px`;
     document.getElementById("pane-blur-value").value = `${this.pref(this.PREF.blur, 18)}px`;
+    document.getElementById("pane-width-value").value = `${this.pref(this.PREF.width, 248)}px`;
   },
 
   renderWorkspaces() {
