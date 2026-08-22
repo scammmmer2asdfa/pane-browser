@@ -84,6 +84,8 @@ pref("pane.appearance.background", "#15171C");
 pref("pane.appearance.surface", "#20232A");
 pref("pane.appearance.text", "#F2F4F8");
 pref("pane.newtab.mode", "dashboard");
+pref("pane.theme.gradient", "");
+pref("pane.onboarding.completed", false);
 
 // Keep the complete native migration wizard, including browser data imports.
 pref("browser.migrate.content-modal.enabled", true);

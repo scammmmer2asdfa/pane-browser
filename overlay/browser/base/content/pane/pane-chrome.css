@@ -191,3 +191,267 @@
     backdrop-filter: none;
   }
 }
+
+/* ==========================================================================
+   Gradient background layer. Chrome sits above this, so blur has real content
+   behind it. Inspired by Zen Browser's browser background layer (MPL-2.0).
+   ========================================================================== */
+#browser {
+  position: relative;
+}
+
+#pane-background {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-color: var(--pane-bg);
+  background-image: var(--pane-gradient, none);
+  opacity: var(--pane-gradient-opacity, .55);
+}
+
+#navigator-toolbox {
+  background-image: var(--pane-gradient, none) !important;
+  background-size: 100vw 100vh;
+  background-position: 0 0;
+}
+
+/* Floating content area so Pane does not read as stock Firefox. */
+#tabbrowser-tabbox {
+  margin: 0 6px 6px;
+  border-radius: calc(var(--pane-radius) * 1.3);
+  overflow: hidden;
+  box-shadow: 0 10px 34px rgb(0 0 0 / .28);
+}
+
+:root[pane-layout="top"] #tabbrowser-tabbox {
+  margin-top: 4px;
+}
+
+.tabbrowser-tab .tab-background {
+  border: 0 !important;
+}
+
+#urlbar {
+  --urlbar-height: 34px;
+}
+
+/* ==========================================================================
+   Gradient picker
+   ========================================================================== */
+.pane-gradient-picker {
+  display: grid;
+  gap: 10px;
+  margin-block-end: 14px;
+}
+
+.pane-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.pane-preset {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.pane-preset:hover {
+  border-color: var(--pane-text);
+}
+
+.pane-canvas {
+  position: relative;
+  height: 150px;
+  border-radius: calc(var(--pane-radius) * .9);
+  background-color: color-mix(in srgb, var(--pane-text) 6%, transparent);
+  background-image: radial-gradient(color-mix(in srgb, var(--pane-text) 18%, transparent) 1px, transparent 1px);
+  background-size: 9px 9px;
+  overflow: hidden;
+}
+
+.pane-dot {
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  margin: -15px 0 0 -15px;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 3px 10px rgb(0 0 0 / .4);
+  cursor: grab;
+  touch-action: none;
+}
+
+.pane-dot:active {
+  cursor: grabbing;
+}
+
+.pane-canvas-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.pane-contrast-row {
+  display: grid !important;
+  gap: 6px;
+}
+
+/* ==========================================================================
+   Space editor
+   ========================================================================== */
+#pane-space-editor {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  overflow: auto;
+  color: var(--pane-text);
+  font: 13px var(--pane-font), system-ui, sans-serif;
+}
+
+#pane-space-editor h2 {
+  margin: 0;
+  font-size: 17px;
+  text-align: center;
+}
+
+#pane-space-editor p {
+  margin: 0;
+  color: color-mix(in srgb, var(--pane-text) 62%, transparent);
+  font-size: 12px;
+  text-align: center;
+}
+
+.pane-space-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+#pane-space-icon {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  font-size: 17px;
+  cursor: pointer;
+}
+
+#pane-space-name {
+  flex: 1;
+  min-width: 0;
+  height: 38px;
+  padding: 0 10px;
+  color: var(--pane-text);
+  background: color-mix(in srgb, var(--pane-text) 7%, transparent);
+  border: 1px solid color-mix(in srgb, var(--pane-text) 14%, transparent);
+  border-radius: var(--pane-radius);
+}
+
+.pane-space-spacer {
+  flex: 1;
+}
+
+#pane-space-editor button,
+#pane-setup button {
+  padding: 10px;
+  color: var(--pane-text);
+  background: color-mix(in srgb, var(--pane-text) 8%, transparent);
+  border: 0;
+  border-radius: var(--pane-radius);
+  cursor: pointer;
+  font: inherit;
+}
+
+#pane-space-editor button.primary,
+#pane-setup button.primary {
+  color: #fff;
+  background: var(--pane-accent);
+}
+
+#pane-space-editor button.ghost {
+  background: none;
+}
+
+/* ==========================================================================
+   First-run setup
+   ========================================================================== */
+#pane-setup {
+  position: fixed;
+  z-index: 2147483002;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--pane-bg) 72%, transparent);
+  backdrop-filter: blur(16px);
+}
+
+.pane-setup-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: min(420px, 82vw);
+  padding: 26px;
+  color: var(--pane-text);
+  background: var(--pane-surface);
+  background-image: var(--pane-gradient, none);
+  border-radius: calc(var(--pane-radius) * 1.6);
+  box-shadow: 0 24px 70px rgb(0 0 0 / .45);
+  font: 14px var(--pane-font), system-ui, sans-serif;
+}
+
+.pane-setup-card h1 {
+  margin: 0 0 6px;
+  font-size: 22px;
+}
+
+.pane-setup-card p {
+  margin: 0;
+  color: color-mix(in srgb, var(--pane-text) 70%, transparent);
+}
+
+.pane-setup-progress {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pane-setup-progress li {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--pane-text) 22%, transparent);
+}
+
+.pane-setup-progress li.active {
+  width: 20px;
+  border-radius: 4px;
+  background: var(--pane-accent);
+}
+
+.pane-setup-options {
+  display: grid;
+  gap: 8px;
+}
+
+.pane-setup-option.selected {
+  outline: 2px solid var(--pane-accent);
+}
+
+.pane-setup-card footer {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.pane-setup-card footer button:disabled {
+  opacity: .4;
+}

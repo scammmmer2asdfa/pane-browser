@@ -1,8 +1,9 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.
  *
- * Workspace swipe handling is adapted from Zen Browser's ZenSpacesSwipe
- * (MPL-2.0): https://github.com/zen-browser/desktop/blob/dev/src/zen/spaces/ZenSpacesSwipe.mjs
+ * Workspace swipe handling is adapted from Zen Browser's ZenSpacesSwipe and the
+ * gradient theming is inspired by ZenGradientGenerator (both MPL-2.0):
+ * https://github.com/zen-browser/desktop
  */
 
 var PaneChrome = {
@@ -19,12 +20,27 @@ var PaneChrome = {
     layout: "pane.tabs.position",
     side: "pane.tabs.side",
     width: "pane.tabs.width",
+    gradient: "pane.theme.gradient",
+    onboarded: "pane.onboarding.completed",
   },
   WORKSPACES_KEY: "pane.workspaces",
   ACTIVE_KEY: "pane.activeWorkspace",
   WINDOW_NAME_KEY: "pane.windowName",
   HIDDEN_SOURCE: "pane-workspace",
   colors: ["blue", "turquoise", "green", "yellow", "orange", "red", "pink", "purple"],
+  DEFAULT_GRADIENT: { dots: [{ c: "#3B6FF5", x: 0.22, y: 0.18 }, { c: "#8A4FFF", x: 0.82, y: 0.78 }], opacity: 55 },
+  PRESETS: [
+    [{ c: "#4ADE80", x: 0.25, y: 0.25 }, { c: "#22D3EE", x: 0.8, y: 0.75 }],
+    [{ c: "#8B5CF6", x: 0.2, y: 0.3 }, { c: "#EC4899", x: 0.85, y: 0.7 }],
+    [{ c: "#F97316", x: 0.25, y: 0.7 }, { c: "#FBBF24", x: 0.78, y: 0.25 }],
+    [{ c: "#3B82F6", x: 0.3, y: 0.2 }, { c: "#06B6D4", x: 0.75, y: 0.8 }],
+    [{ c: "#F43F5E", x: 0.22, y: 0.28 }, { c: "#8B5CF6", x: 0.8, y: 0.72 }],
+    [{ c: "#14B8A6", x: 0.28, y: 0.75 }, { c: "#6366F1", x: 0.76, y: 0.22 }],
+    [{ c: "#E879F9", x: 0.24, y: 0.24 }, { c: "#38BDF8", x: 0.82, y: 0.74 }],
+    [{ c: "#FACC15", x: 0.3, y: 0.3 }, { c: "#84CC16", x: 0.78, y: 0.76 }],
+    [{ c: "#0EA5E9", x: 0.2, y: 0.8 }, { c: "#A78BFA", x: 0.8, y: 0.2 }],
+    [{ c: "#64748B", x: 0.25, y: 0.25 }, { c: "#94A3B8", x: 0.8, y: 0.78 }],
+  ],
 
   get SessionStore() {
     return ChromeUtils.importESModule(
@@ -37,12 +53,14 @@ var PaneChrome = {
       return;
     }
     this.applyAppearance();
+    this.ensureBackground();
     this.applyLayout();
     this.loadState();
     this.createRail();
     this.bindEvents();
     this.switchWorkspace(this.activeId, false);
     this.applyWindowName();
+    this.maybeShowSetup();
   },
 
   pref(name, fallback) {
@@ -69,6 +87,48 @@ var PaneChrome = {
     root.style.colorScheme = appearance === "system" ? "light dark" : appearance;
     root.setAttribute("pane-appearance", appearance);
     root.toggleAttribute("pane-glass", this.pref(this.PREF.blur, 18) > 0);
+    this.applyGradient();
+  },
+
+  get gradient() {
+    const active = this.workspaces?.find(space => space.id === this.activeId);
+    if (active?.gradient?.dots) return active.gradient;
+    try {
+      const stored = JSON.parse(this.pref(this.PREF.gradient, ""));
+      if (Array.isArray(stored?.dots)) return stored;
+    } catch (_) {}
+    return this.DEFAULT_GRADIENT;
+  },
+
+  set gradient(value) {
+    Services.prefs.setStringPref(this.PREF.gradient, JSON.stringify(value));
+    const active = this.workspaces?.find(space => space.id === this.activeId);
+    if (active) {
+      active.gradient = value;
+      this.saveState();
+    }
+    this.applyGradient();
+  },
+
+  applyGradient() {
+    const { dots, opacity } = this.gradient;
+    const layers = dots.map(dot =>
+      `radial-gradient(circle at ${(dot.x * 100).toFixed(1)}% ${(dot.y * 100).toFixed(1)}%, ${dot.c} 0%, transparent 62%)`
+    );
+    const root = document.documentElement;
+    root.style.setProperty("--pane-gradient", layers.length ? layers.join(",") : "none");
+    root.style.setProperty("--pane-gradient-opacity", String((opacity ?? 55) / 100));
+  },
+
+  // Chrome can only blur something that is painted behind it, so Pane paints the
+  // gradient on a layer inside #browser rather than on the window itself.
+  ensureBackground() {
+    if (document.getElementById("pane-background")) return;
+    const browserBox = document.getElementById("browser");
+    if (!browserBox) return;
+    const layer = document.createElement("div");
+    layer.id = "pane-background";
+    browserBox.prepend(layer);
   },
 
   applyLayout() {
@@ -143,10 +203,7 @@ var PaneChrome = {
       return;
     }
     rail.slot = "tabstrip";
-    document.querySelector("sidebar-main").insertBefore(
-      rail,
-      document.getElementById("vertical-tabs")
-    );
+    document.querySelector("sidebar-main").append(rail);
   },
 
   createCustomizer() {
@@ -155,6 +212,7 @@ var PaneChrome = {
     panel.hidden = true;
     panel.innerHTML = `
       <header><strong>Customize Pane</strong><button id="pane-customizer-close" aria-label="Close">&#x2715;</button></header>
+      <div id="pane-theme-picker"></div>
       <label>Tab layout<select id="pane-layout"><option value="top">Top tabs</option><option value="sidebar">Sidebar tabs</option><option value="collapsed">Collapsed sidebar</option></select></label>
       <label>Sidebar side<select id="pane-side"><option value="left">Left</option><option value="right">Right</option></select></label>
       <label>Sidebar width <output id="pane-width-value"></output><input id="pane-width" type="range" min="190" max="420" step="2"></label>
@@ -169,6 +227,7 @@ var PaneChrome = {
       <label>Animation<select id="pane-animation"><option value="off">Off</option><option value="minimal">Minimal</option><option value="full">Full</option></select></label>
       <button id="pane-rename-window">Rename window</button>`;
     document.body.append(panel);
+    panel.querySelector("#pane-theme-picker").append(this.buildGradientPicker());
     const values = {
       radius: this.pref(this.PREF.radius, 10), blur: this.pref(this.PREF.blur, 18), width: this.pref(this.PREF.width, 248),
       accent: this.pref(this.PREF.accent, "#3B6FF5"), background: this.pref(this.PREF.background, "#15171c"),
@@ -286,6 +345,172 @@ var PaneChrome = {
     }
   },
 
+  buildGradientPicker() {
+    const picker = document.createElement("div");
+    picker.className = "pane-gradient-picker";
+    picker.innerHTML = `
+      <div class="pane-presets"></div>
+      <div class="pane-canvas"></div>
+      <div class="pane-canvas-actions">
+        <button data-act="add" title="Add colour">+</button>
+        <button data-act="remove" title="Remove colour">&#8722;</button>
+      </div>
+      <label class="pane-contrast-row">Contrast<input class="pane-contrast" type="range" min="0" max="100" step="1"></label>`;
+
+    const presets = picker.querySelector(".pane-presets");
+    for (const dots of this.PRESETS) {
+      const swatch = document.createElement("button");
+      swatch.className = "pane-preset";
+      swatch.style.background = `linear-gradient(135deg, ${dots[0].c}, ${dots[1].c})`;
+      swatch.addEventListener("click", () => {
+        this.gradient = { dots: dots.map(dot => ({ ...dot })), opacity: this.gradient.opacity };
+        this.renderGradientPicker(picker);
+      });
+      presets.append(swatch);
+    }
+
+    picker.querySelector('[data-act="add"]').addEventListener("click", () => {
+      const gradient = this.gradient;
+      if (gradient.dots.length >= 5) return;
+      gradient.dots.push({ c: this.pref(this.PREF.accent, "#3B6FF5"), x: 0.5, y: 0.5 });
+      this.gradient = gradient;
+      this.renderGradientPicker(picker);
+    });
+    picker.querySelector('[data-act="remove"]').addEventListener("click", () => {
+      const gradient = this.gradient;
+      if (gradient.dots.length <= 1) return;
+      gradient.dots.pop();
+      this.gradient = gradient;
+      this.renderGradientPicker(picker);
+    });
+    picker.querySelector(".pane-contrast").addEventListener("input", event => {
+      const gradient = this.gradient;
+      gradient.opacity = Number(event.target.value);
+      this.gradient = gradient;
+    });
+
+    this.renderGradientPicker(picker);
+    return picker;
+  },
+
+  renderGradientPicker(picker) {
+    const gradient = this.gradient;
+    const canvas = picker.querySelector(".pane-canvas");
+    picker.querySelector(".pane-contrast").value = gradient.opacity ?? 55;
+    canvas.replaceChildren();
+    gradient.dots.forEach((dot, index) => {
+      const handle = document.createElement("button");
+      handle.className = "pane-dot";
+      handle.style.background = dot.c;
+      handle.style.left = `${dot.x * 100}%`;
+      handle.style.top = `${dot.y * 100}%`;
+      handle.title = "Drag to move, double-click to recolour";
+      handle.addEventListener("pointerdown", event => {
+        event.preventDefault();
+        handle.setPointerCapture(event.pointerId);
+        const move = moveEvent => {
+          const bounds = canvas.getBoundingClientRect();
+          const x = Math.min(1, Math.max(0, (moveEvent.clientX - bounds.left) / bounds.width));
+          const y = Math.min(1, Math.max(0, (moveEvent.clientY - bounds.top) / bounds.height));
+          const next = this.gradient;
+          next.dots[index] = { ...next.dots[index], x, y };
+          this.gradient = next;
+          handle.style.left = `${x * 100}%`;
+          handle.style.top = `${y * 100}%`;
+        };
+        const stop = () => {
+          handle.removeEventListener("pointermove", move);
+          handle.removeEventListener("pointerup", stop);
+        };
+        handle.addEventListener("pointermove", move);
+        handle.addEventListener("pointerup", stop);
+      });
+      handle.addEventListener("dblclick", () => {
+        const value = prompt("Colour (hex)", dot.c)?.trim();
+        if (!value) return;
+        const next = this.gradient;
+        next.dots[index] = { ...next.dots[index], c: value };
+        this.gradient = next;
+        this.renderGradientPicker(picker);
+      });
+      canvas.append(handle);
+    });
+  },
+
+  maybeShowSetup() {
+    if (Services.prefs.getBoolPref(this.PREF.onboarded, false)) return;
+    const overlay = document.createElement("div");
+    overlay.id = "pane-setup";
+    overlay.innerHTML = `
+      <div class="pane-setup-card">
+        <ol class="pane-setup-progress"></ol>
+        <section class="pane-setup-page">
+          <h1>Welcome to Pane</h1>
+          <p>A fast, private browser with spaces, live theming and no telemetry.</p>
+        </section>
+        <section class="pane-setup-page" hidden>
+          <h1>Choose a layout</h1>
+          <div class="pane-setup-options" id="pane-setup-layout"></div>
+        </section>
+        <section class="pane-setup-page" hidden>
+          <h1>Pick your colours</h1>
+          <div id="pane-setup-theme"></div>
+        </section>
+        <section class="pane-setup-page" hidden>
+          <h1>Bring your data</h1>
+          <p>Import bookmarks, history and passwords from another browser.</p>
+          <button id="pane-setup-import">Import browser data</button>
+        </section>
+        <footer>
+          <button id="pane-setup-back">Back</button>
+          <button id="pane-setup-next" class="primary">Continue</button>
+        </footer>
+      </div>`;
+    document.body.append(overlay);
+
+    const pages = [...overlay.querySelectorAll(".pane-setup-page")];
+    const progress = overlay.querySelector(".pane-setup-progress");
+    const back = overlay.querySelector("#pane-setup-back");
+    const next = overlay.querySelector("#pane-setup-next");
+    for (const _ of pages) progress.append(document.createElement("li"));
+    let index = 0;
+    const show = page => {
+      index = page;
+      pages.forEach((section, i) => (section.hidden = i !== index));
+      [...progress.children].forEach((dot, i) => dot.classList.toggle("active", i === index));
+      back.disabled = index === 0;
+      next.textContent = index === pages.length - 1 ? "Start browsing" : "Continue";
+    };
+
+    const layoutBox = overlay.querySelector("#pane-setup-layout");
+    for (const [value, label] of [["sidebar", "Sidebar tabs"], ["collapsed", "Collapsed sidebar"], ["top", "Top tabs"]]) {
+      const option = document.createElement("button");
+      option.className = "pane-setup-option";
+      option.textContent = label;
+      option.classList.toggle("selected", this.pref(this.PREF.layout, "sidebar") === value);
+      option.addEventListener("click", () => {
+        Services.prefs.setStringPref(this.PREF.layout, value);
+        this.applyLayout();
+        [...layoutBox.children].forEach(child => child.classList.toggle("selected", child === option));
+      });
+      layoutBox.append(option);
+    }
+    overlay.querySelector("#pane-setup-theme").append(this.buildGradientPicker());
+    overlay.querySelector("#pane-setup-import").addEventListener("click", () => {
+      gBrowser.selectedTab = gBrowser.addTrustedTab("about:preferences#general-migrate");
+    });
+    back.addEventListener("click", () => show(Math.max(0, index - 1)));
+    next.addEventListener("click", () => {
+      if (index === pages.length - 1) {
+        Services.prefs.setBoolPref(this.PREF.onboarded, true);
+        overlay.remove();
+        return;
+      }
+      show(index + 1);
+    });
+    show(0);
+  },
+
   updateOutputs() {
     document.getElementById("pane-radius-value").value = `${this.pref(this.PREF.radius, 10)}px`;
     document.getElementById("pane-blur-value").value = `${this.pref(this.PREF.blur, 18)}px`;
@@ -302,8 +527,8 @@ var PaneChrome = {
       button.dataset.color = space.color;
       button.setAttribute("role", "tab");
       button.setAttribute("aria-selected", String(space.id === this.activeId));
-      button.title = `${space.name}\nDouble-click to rename`;
-      button.innerHTML = `<span>${space.name.slice(0, 1).toUpperCase()}</span><small>${space.name}</small>`;
+      button.title = `${space.name}\nDouble-click to edit`;
+      button.innerHTML = `<span>${space.icon || space.name.slice(0, 1).toUpperCase()}</span><small>${space.name}</small>`;
       button.addEventListener("click", () => this.switchWorkspace(space.id));
       button.addEventListener("dblclick", event => { event.stopPropagation(); this.renameWorkspace(space.id); });
       button.addEventListener("contextmenu", event => {
@@ -315,23 +540,85 @@ var PaneChrome = {
   },
 
   async createWorkspace() {
-    const name = prompt("Workspace name", `Workspace ${this.workspaces.length + 1}`)?.trim();
-    if (!name) return;
-    const index = this.workspaces.length % this.colors.length;
-    const space = { id: crypto.randomUUID(), name, color: this.colors[index] };
-    this.workspaces.push(space);
-    this.saveState();
-    this.renderWorkspaces();
-    await this.switchWorkspace(space.id);
+    this.openSpaceEditor();
+  },
+
+  openSpaceEditor(editId) {
+    document.getElementById("pane-space-editor")?.remove();
+    const editing = this.workspaces.find(space => space.id === editId);
+    const icons = ["\u{1F310}", "\u{1F4BC}", "\u{1F3E0}", "\u{1F4DA}", "\u{1F3B5}", "\u{1F6D2}", "\u{2728}", "\u{1F525}", "\u{1F331}", "\u{1F3AF}"];
+    const editor = document.createElement("div");
+    editor.id = "pane-space-editor";
+    editor.innerHTML = `
+      <h2>${editing ? "Edit Space" : "Create a Space"}</h2>
+      <p>Spaces are used to organize your tabs and sessions.</p>
+      <div class="pane-space-row">
+        <button id="pane-space-icon" title="Change icon"></button>
+        <input id="pane-space-name" placeholder="Space Name" maxlength="32">
+      </div>
+      <button id="pane-space-theme-toggle">Edit Theme</button>
+      <div id="pane-space-theme" hidden></div>
+      <div class="pane-space-spacer"></div>
+      <button id="pane-space-save" class="primary">${editing ? "Save Space" : "Create Space"}</button>
+      <button id="pane-space-cancel" class="ghost">Cancel</button>`;
+
+    const sidebar = document.querySelector("sidebar-main");
+    if (sidebar) {
+      editor.slot = "tabstrip";
+      sidebar.append(editor);
+    } else {
+      document.body.append(editor);
+    }
+
+    const nameField = editor.querySelector("#pane-space-name");
+    const iconButton = editor.querySelector("#pane-space-icon");
+    let icon = editing?.icon || icons[this.workspaces.length % icons.length];
+    iconButton.textContent = icon;
+    nameField.value = editing?.name || "";
+    nameField.focus();
+
+    iconButton.addEventListener("click", () => {
+      icon = icons[(icons.indexOf(icon) + 1) % icons.length];
+      iconButton.textContent = icon;
+    });
+    editor.querySelector("#pane-space-theme-toggle").addEventListener("click", () => {
+      const panel = editor.querySelector("#pane-space-theme");
+      if (!panel.children.length) panel.append(this.buildGradientPicker());
+      panel.hidden = !panel.hidden;
+    });
+    editor.querySelector("#pane-space-cancel").addEventListener("click", () => editor.remove());
+    const save = () => {
+      const name = nameField.value.trim();
+      if (!name) return nameField.focus();
+      if (editing) {
+        editing.name = name;
+        editing.icon = icon;
+        this.saveState();
+        this.renderWorkspaces();
+      } else {
+        const space = {
+          id: crypto.randomUUID(),
+          name,
+          icon,
+          color: this.colors[this.workspaces.length % this.colors.length],
+          gradient: this.gradient,
+        };
+        this.workspaces.push(space);
+        this.saveState();
+        this.renderWorkspaces();
+        this.switchWorkspace(space.id);
+      }
+      editor.remove();
+    };
+    editor.querySelector("#pane-space-save").addEventListener("click", save);
+    nameField.addEventListener("keydown", event => {
+      if (event.key === "Enter") save();
+      if (event.key === "Escape") editor.remove();
+    });
   },
 
   renameWorkspace(id) {
-    const space = this.workspaces.find(item => item.id === id);
-    const name = prompt("Rename workspace", space.name)?.trim();
-    if (!name) return;
-    space.name = name;
-    this.saveState();
-    this.renderWorkspaces();
+    this.openSpaceEditor(id);
   },
 
   deleteWorkspace(id) {
@@ -372,6 +659,7 @@ var PaneChrome = {
     }
     this.saveState();
     this.renderWorkspaces();
+    this.applyGradient();
     this.ensureVisibleTab();
   },
 
